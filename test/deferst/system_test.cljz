@@ -1,10 +1,10 @@
 (ns deferst.system-test
   (:require
    [cats.core :refer [return]]
-   [prpr3.test :refer [deftest test-async is testing use-fixtures]]
+   [promisespromises.test :refer [deftest test-async is testing use-fixtures]]
    [clojure.set :as set]
    [schema.test]
-   [prpr3.promise :as pr :refer [ddo]]
+   [promisespromises.promise :as pr :refer [ddo]]
    [deferst.system :as s]
    [cats.monad.state :as state]
    [cats.core :as monad]))

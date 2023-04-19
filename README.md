@@ -12,7 +12,7 @@ event and effect handling machinery to the async domain, offering a
 straightforward separation of pure and effectful code for both 
 Clojure and ClojureScript
 
-## prpr3.a-frame
+## promisespromises.a-frame
 
 A-frame is a port of the non-view parts of
 [re-frame](https://github.com/day8/re-frame) - event-handling, cofx and
@@ -30,20 +30,20 @@ or a list of such maps (which will be processed strictly serially)
 * based around a pure-data driven async interceptor-chain
 [`a-frame.interceptor-chain`](https://github.com/yapsterapp/a-frame/blob/trunk/src/a_frame/interceptor_chain.cljc)
 and implemented on top of promesa and
-prpr3.streams. Being pure-data driven leads to some nice
+promisespromises.streams. Being pure-data driven leads to some nice
 properties
   * interceptor contexts are fully de/serializable
   * errors can include a 'resume-context' allowing for:
     * automatic retry
     * logging of the resume-context, allowing retry in a REPL
 * unlike re-frame, where `dispatch-sync` is uncommon,
-`prpr3.a-frame/dispatch-sync` has been perhaps the most used type of dispatch
+`promisespromises.a-frame/dispatch-sync` has been perhaps the most used type of dispatch
 with a-frame. `dispatch-sync` is actually an async fn, but it does not resolve
 the result promise until all effects (including transitive dispatches)
 resulting from the event have been processed
 
 ``` clojure
-(require '[prpr3.a-frame :as af])
+(require '[promisespromises.a-frame :as af])
 
 (af/reg-cofx
   ::load-foo
@@ -58,7 +58,7 @@ resulting from the event have been processed
 
 (af/reg-event-fx
   ::get-foo
-  [(af/inject-cofx ::load-foo {:id #prpr3.cofx/path [:params :query :id]})]
+  [(af/inject-cofx ::load-foo {:id #promisespromises.cofx/path [:params :query :id]})]
   (fn [{foo ::foo
         :as coeffects} event]
     [{:api/response {:foo foo}}]))

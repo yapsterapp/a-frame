@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# npx shadow-cljs -d nrepl:1.0.0 -d cider/piggieback:0.5.3 -d refactor-nrepl:3.6.0 -d cider/cider-nrepl:0.29.0 node-repl
+
+clojure -A:shadow-cljs -A:shadow-node-repl node-repl

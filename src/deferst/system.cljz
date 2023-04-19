@@ -5,8 +5,8 @@
    [cats.context #?(:clj :refer :cljs :refer-macros) [with-context]]
    [cats.monad.state :as state]
    [cats.core :as monad :refer [return bind]]
-   [prpr3.cats.prws :as prws #?@(:cljs [:include-macros true])]
-   [prpr3.promise :as pr #?@(:cljs [:include-macros true])]
+   [promisespromises.cats.prws :as prws #?@(:cljs [:include-macros true])]
+   [promisespromises.promise :as pr #?@(:cljs [:include-macros true])]
    [deferst.kahn :refer [kahn-sort]]))
 
 (def ^:private SystemStateSchema

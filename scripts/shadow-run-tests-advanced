@@ -1,0 +1,9 @@
+#!/bin/bash
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+cd $DIR/..
+npm ci
+
+clojure -A:shadow-cljs -A:test release node-test-advanced &&
+    node -r source-map-support/register target/node-test-advanced/node-tests.js

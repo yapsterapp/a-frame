@@ -1,12 +1,5 @@
 {:lint-as
- {malli.experimental/defn schema.core/defn
-  promesa.core/let clojure.core/let
-  promesa.core/loop clojure.core/loop
-  promesa.core/recur clojure.core/recur
-  prpr3.test/deftest clojure.test/deftest
-  prpr3.test/tlet clojure.core/let
-  prpr3.promise.lastcall/lastcall-fn clojure.core/fn
-  prpr3.promise.lastcall/def-lastcall-fn clojure.core/defn}
+ {}
 
  :linters
  {:unused-namespace {:exclude [taoensso.timbre]}

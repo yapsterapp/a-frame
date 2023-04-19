@@ -1,7 +1,7 @@
 ;; (ns deferst.core
 ;;   (:require
 ;;    #?(:clj [clojure.tools.namespace.repl :as tn])
-;;    [prpr3.promise :as pr #?@(:cljs [:include-macros true])]
+;;    [promisespromises.promise :as pr #?@(:cljs [:include-macros true])]
 ;;    [deferst.system :as s]))
 
 ;; (defprotocol ISys

@@ -1,7 +1,7 @@
 (ns deferst.core-test
   (:require
-   [prpr3.test :refer [deftest test-async is testing use-fixtures]]
-   [prpr3.promise :as pr :refer [ddo]]
+   [promisespromises.test :refer [deftest test-async is testing use-fixtures]]
+   [promisespromises.promise :as pr :refer [ddo]]
    [cats.core :refer [return]]
    [clojure.set :as set]
    [schema.test]
