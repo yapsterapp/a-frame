@@ -7,9 +7,7 @@
 (def lib 'com.github.yapsterapp/a-frame)
 (def web-url "https://github.com/yapsterapp/a-frame")
 (def scm-url "git@github.com/yapsterapp/a-frame.git")
-(def version "3.0.0-alpha2-SNAPSHOT")
-#_ ; alternatively, use MAJOR.MINOR.COMMITS:
-(def version (format "3.0.%s-SNAPSHOT" (b/git-count-revs nil)))
+(def version (format "3.0.%s-alpha1" (b/git-count-revs nil)))
 
 (defn sha
   "the git sha is needed to tag a release in the pom.xml for cljdocs"

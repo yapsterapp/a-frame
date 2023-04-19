@@ -1,4 +1,4 @@
-# promisespromises
+# a-frame
 
 [![Build Status](https://github.com/yapsterapp/a-frame/actions/workflows/clojure.yml/badge.svg)](https://github.com/yapsterapp/a-frame/actions)
 [![Clojars Project](https://img.shields.io/clojars/v/com.github.yapsterapp/a-frame.svg)](https://clojars.org/com.github.yapsterapp/a-frame)
@@ -12,7 +12,7 @@ event and effect handling machinery to the async domain, offering a
 straightforward separation of pure and effectful code for both 
 Clojure and ClojureScript
 
-## promisespromises.a-frame
+## a-frame
 
 A-frame is a port of the non-view parts of
 [re-frame](https://github.com/day8/re-frame) - event-handling, cofx and
