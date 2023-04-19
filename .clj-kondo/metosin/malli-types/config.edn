@@ -1,0 +1,13 @@
+{:linters {:unresolved-symbol {:exclude [(malli.core/=>)]},
+           :type-mismatch {:namespaces {prpr3.stream.cross {cross {:arities {2 {:args [{:op :keys,
+                                                                                       :opt {:prpr3.stream.cross/key-comparator :fn,
+                                                                                             :prpr3.stream.cross/product-sort :fn,
+                                                                                             :prpr3.stream.cross.op.n-left-join/n :int,
+                                                                                             :prpr3.stream.cross/finalizer :fn,
+                                                                                             :prpr3.stream.cross/target-chunk-size :int},
+                                                                                       :req {:prpr3.stream.cross/keys {:op :rest,
+                                                                                                                      :spec [:keyword
+                                                                                                                             :any]},
+                                                                                             :prpr3.stream.cross/op :keyword}}
+                                                                                      :any],
+                                                                               :ret :any}}}}}}}}

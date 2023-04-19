@@ -1,0 +1,12 @@
+{
+  "name": "com.github.yapsterapp/a-frame",
+  "version": "0.0.1",
+  "description": "a-frame",
+  "dependencies": {
+  },
+  "devDependencies": {
+    "shadow-cljs": "^2.22.9"
+  },
+  "scripts": {
+  }
+}

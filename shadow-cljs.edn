@@ -1,0 +1,28 @@
+;; shadow-cljs configuration
+{:deps {:aliases [:shadow-cljs]}
+
+ :builds
+ {:node-test-simple {:target    :node-test
+                     :output-to "target/node-test-simple/node-tests.js"
+                     :ns-regexp ".*-test"
+                     :autorun   false
+                     :devtools {:preloads []}
+                     :compiler-options {:optimizations :simple
+                                        :source-map true}
+                     :closure-defines {}}
+
+  :node-test-advanced {:target    :node-test
+                       :output-to "target/node-test-advanced/node-tests.js"
+                       :ns-regexp ".*-test"
+                       :autorun   false
+                       :devtools {:preloads []}
+                       :compiler-options {:optimizations :advanced
+                                          :source-map true}
+                       :closure-defines {}}
+
+  :node-test-autorun {:target    :node-test
+                      :output-to "target/node-test-autorun/node-tests.js"
+                      :ns-regexp ".*-test"
+                      :autorun   true
+                      :compiler-options {}
+                      :closure-defines {}}}}
