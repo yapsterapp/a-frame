@@ -1,4 +1,4 @@
-(ns prpr3.a-frame.router-test
+(ns a-frame.router-test
   (:require
    [prpr3.test
     :refer [deftest tlet testing is use-fixtures compose-fixtures
@@ -9,14 +9,14 @@
    [prpr3.error :as err]
    [prpr3.stream :as stream]
    [prpr3.stream.transport :as stream.impl]
-   [prpr3.a-frame.schema :as schema]
-   [prpr3.a-frame.registry :as registry]
-   [prpr3.a-frame.registry.test :as registry.test]
-   [prpr3.a-frame.interceptor-chain :as interceptor-chain]
-   [prpr3.a-frame.std-interceptors :as std-interceptors]
-   [prpr3.a-frame.events :as events]
-   [prpr3.a-frame.fx :as fx]
-   [prpr3.a-frame.router :as sut]
+   [a-frame.schema :as schema]
+   [a-frame.registry :as registry]
+   [a-frame.registry.test :as registry.test]
+   [a-frame.interceptor-chain :as interceptor-chain]
+   [a-frame.std-interceptors :as std-interceptors]
+   [a-frame.events :as events]
+   [a-frame.fx :as fx]
+   [a-frame.router :as sut]
    [taoensso.timbre :refer [error]]))
 
 (def error-val (atom nil))

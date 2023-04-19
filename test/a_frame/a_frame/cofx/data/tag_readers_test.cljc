@@ -1,10 +1,10 @@
-(ns prpr3.a-frame.cofx.data.tag-readers-test
+(ns a-frame.cofx.data.tag-readers-test
   (:require
    [prpr3.test :as t :refer [deftest testing is]]
-   [prpr3.a-frame.schema :as af.schema]
-   [prpr3.a-frame.interceptor-chain.data :as data]
-   [prpr3.a-frame.interceptor-chain.data.data-path :refer [->DataPath]]
-   [prpr3.a-frame.cofx.data.tag-readers]))
+   [a-frame.schema :as af.schema]
+   [a-frame.interceptor-chain.data :as data]
+   [a-frame.interceptor-chain.data.data-path :refer [->DataPath]]
+   [a-frame.cofx.data.tag-readers]))
 
 (deftest coeffect-path-reader-test
   (is (= (->DataPath [af.schema/a-frame-coeffects :foo])

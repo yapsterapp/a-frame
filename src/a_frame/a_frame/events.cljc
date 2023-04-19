@@ -1,11 +1,11 @@
-(ns prpr3.a-frame.events
+(ns a-frame.events
   (:require
    [malli.experimental :as mx]
    [prpr3.error :as err]
-   [prpr3.a-frame.schema :as schema]
-   [prpr3.a-frame.registry :as registry]
-   [prpr3.a-frame.std-interceptors :as std-interceptors]
-   [prpr3.a-frame.interceptor-chain :as interceptor-chain]
+   [a-frame.schema :as schema]
+   [a-frame.registry :as registry]
+   [a-frame.std-interceptors :as std-interceptors]
+   [a-frame.interceptor-chain :as interceptor-chain]
    [taoensso.timbre :refer [warn]]))
 
 (defn flatten-and-remove-nils
@@ -43,7 +43,7 @@
    (register
     id
     [::std-interceptors/unhandled-error-report
-     :prpr3.a-frame.fx/do-fx
+     :a-frame.fx/do-fx
      interceptors
      (std-interceptors/fx-handler->interceptor id)])))
 
@@ -58,7 +58,7 @@
    (register
     id
     [::std-interceptors/unhandled-error-report
-     :prpr3.a-frame.fx/do-fx
+     :a-frame.fx/do-fx
      interceptors
      (std-interceptors/ctx-handler->interceptor id)])))
 

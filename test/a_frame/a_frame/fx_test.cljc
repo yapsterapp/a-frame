@@ -1,16 +1,16 @@
-(ns prpr3.a-frame.fx-test
+(ns a-frame.fx-test
   (:require
    [prpr3.test
     :refer [deftest is testing use-fixtures with-log-level-fixture]]
    [promesa.core :as pr]
    [prpr3.stream.transport :as stream.impl]
-   [prpr3.a-frame.schema :as schema]
-   [prpr3.a-frame.registry :as registry]
-   [prpr3.a-frame.registry.test :as registry.test]
-   [prpr3.a-frame.events :as events]
-   [prpr3.a-frame.interceptor-chain :as interceptor-chain]
-   [prpr3.a-frame.fx :as sut]
-   [prpr3.a-frame.router :as router]
+   [a-frame.schema :as schema]
+   [a-frame.registry :as registry]
+   [a-frame.registry.test :as registry.test]
+   [a-frame.events :as events]
+   [a-frame.interceptor-chain :as interceptor-chain]
+   [a-frame.fx :as sut]
+   [a-frame.router :as router]
    [prpr3.promise :as prpr]))
 
 (use-fixtures :once (with-log-level-fixture :warn))

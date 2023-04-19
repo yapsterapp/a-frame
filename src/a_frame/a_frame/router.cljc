@@ -1,4 +1,4 @@
-(ns prpr3.a-frame.router
+(ns a-frame.router
   (:require
    [malli.core :as m]
    [malli.experimental :as mx]
@@ -7,8 +7,8 @@
    [prpr3.promise :as prpr]
    [prpr3.stream :as stream]
    [prpr3.stream.transport :as stream.transport]
-   [prpr3.a-frame.schema :as schema]
-   [prpr3.a-frame.events :as events]
+   [a-frame.schema :as schema]
+   [a-frame.events :as events]
    [taoensso.timbre :refer [debug info warn error]]))
 
 ;; use a record so we can

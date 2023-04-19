@@ -1,9 +1,9 @@
-(ns prpr3.a-frame.registry-test
+(ns a-frame.registry-test
   (:require
    [prpr3.test :refer [deftest testing is use-fixtures]]
-   [prpr3.a-frame.schema :as schema]
-   [prpr3.a-frame.registry :as sut]
-   [prpr3.a-frame.registry.test :as registry.test]))
+   [a-frame.schema :as schema]
+   [a-frame.registry :as sut]
+   [a-frame.registry.test :as registry.test]))
 
 (use-fixtures :each registry.test/reset-registry)
 

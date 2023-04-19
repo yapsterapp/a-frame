@@ -1,7 +1,7 @@
-(ns prpr3.a-frame.interceptor-chain.data
+(ns a-frame.interceptor-chain.data
   (:require
-   [prpr3.a-frame.interceptor-chain.data.protocols :as p]
-   [prpr3.a-frame.interceptor-chain.data.data-path]
+   [a-frame.interceptor-chain.data.protocols :as p]
+   [a-frame.interceptor-chain.data.data-path]
    [taoensso.timbre :refer [info warn]])
   (:import
    #?(:clj [clojure.lang IPersistentMap IPersistentVector])))

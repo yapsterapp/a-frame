@@ -1,11 +1,11 @@
-(ns prpr3.a-frame.std-interceptors
+(ns a-frame.std-interceptors
   (:require
    [#?(:clj clj-uuid :cljs cljs-uuid-utils.core) :as uuid]
    [#?(:clj clojure.pprint :cljs cljs.pprint) :as pprint]
-   [prpr3.a-frame.schema :as schema]
-   [prpr3.a-frame.registry :as registry]
-   [prpr3.a-frame.interceptor-chain :as interceptor-chain]
-   [prpr3.a-frame.log :as af.log]
+   [a-frame.schema :as schema]
+   [a-frame.registry :as registry]
+   [a-frame.interceptor-chain :as interceptor-chain]
+   [a-frame.log :as af.log]
    [taoensso.timbre :refer [info warn error]]))
 
 (defn fx-handler->interceptor

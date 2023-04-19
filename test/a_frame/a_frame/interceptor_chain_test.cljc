@@ -1,12 +1,12 @@
-(ns prpr3.a-frame.interceptor-chain-test
+(ns a-frame.interceptor-chain-test
   (:require
    [prpr3.test :refer [deftest tlet testing is use-fixtures]]
    [prpr3.test.malli :as test.malli]
    [promesa.core :as pr]
    [prpr3.promise :as prpr]
-   [prpr3.a-frame.schema :as af.schema]
-   [prpr3.a-frame.registry.test :as registry.test]
-   [prpr3.a-frame.interceptor-chain :as sut]))
+   [a-frame.schema :as af.schema]
+   [a-frame.registry.test :as registry.test]
+   [a-frame.interceptor-chain :as sut]))
 
 (use-fixtures :once test.malli/instrument-fns-fixture)
 (use-fixtures :each registry.test/reset-registry)

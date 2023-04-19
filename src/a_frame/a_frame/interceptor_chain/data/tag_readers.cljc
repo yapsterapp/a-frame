@@ -1,8 +1,8 @@
-(ns prpr3.a-frame.interceptor-chain.data.tag-readers
-  #?(:cljs (:require-macros [prpr3.a-frame.interceptor-chain.data.tag-readers]))
+(ns a-frame.interceptor-chain.data.tag-readers
+  #?(:cljs (:require-macros [a-frame.interceptor-chain.data.tag-readers]))
   (:require
    #?(:clj [prpr3.util.macro :refer [if-cljs]])
-   [prpr3.a-frame.interceptor-chain.data.data-path
+   [a-frame.interceptor-chain.data.data-path
     :refer [->DataPath]]))
 
 ;; see https://github.com/clojure/clojurescript-site/issues/371

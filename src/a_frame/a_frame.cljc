@@ -1,18 +1,18 @@
 (ns prpr3.a-frame
   (:require
-   [prpr3.a-frame.schema :as schema]
-   [prpr3.a-frame.events :as events]
-   [prpr3.a-frame.fx :as fx]
-   [prpr3.a-frame.cofx :as cofx]
-   [prpr3.a-frame.std-interceptors
+   [a-frame.schema :as schema]
+   [a-frame.events :as events]
+   [a-frame.fx :as fx]
+   [a-frame.cofx :as cofx]
+   [a-frame.std-interceptors
     :refer [modify-interceptors-for-coeffects]]
-   [prpr3.a-frame.registry :as registry]
-   [prpr3.a-frame.router :as router]))
+   [a-frame.registry :as registry]
+   [a-frame.router :as router]))
 
 ;; like re-frame, but for backend stuff
 ;; provide an app-context map to most of the core fns, from which an
 ;; a-frame instance (with event-stream, handler registrations &c)
-;; can be extracted at :prpr3.a-frame/app
+;; can be extracted at :a-frame.app
 ;; app-context will also be provided to event/fx/cofx handlers
 ;; so they can do complex stuff
 

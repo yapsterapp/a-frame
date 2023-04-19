@@ -1,4 +1,4 @@
-(ns prpr3.a-frame.schema
+(ns a-frame.schema
   (:require
    [malli.util :as mu]
    [prpr3.stream :as stream]))

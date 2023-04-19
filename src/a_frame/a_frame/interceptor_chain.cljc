@@ -1,4 +1,4 @@
-(ns prpr3.a-frame.interceptor-chain
+(ns a-frame.interceptor-chain
   (:require
    [malli.util :as mu]
    [malli.experimental :as mx]
@@ -6,10 +6,10 @@
    [prpr3.promise :as prpr]
    [prpr3.error :as err]
    [taoensso.timbre :refer [warn error]]
-   [prpr3.a-frame.schema :as af.schema]
-   [prpr3.a-frame.registry :as registry]
-   [prpr3.a-frame.interceptor-chain.data :as data]
-   [prpr3.a-frame.interceptor-chain.data.tag-readers]))
+   [a-frame.schema :as af.schema]
+   [a-frame.registry :as registry]
+   [a-frame.interceptor-chain.data :as data]
+   [a-frame.interceptor-chain.data.tag-readers]))
 
 ;; a slightly more data-driven interceptor chain for a-frame
 ;;
