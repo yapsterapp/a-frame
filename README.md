@@ -1,8 +1,8 @@
 # promisespromises
 
-[![Build Status](https://github.com/yapsterapp/promisespromises/actions/workflows/clojure.yml/badge.svg)](https://github.com/yapsterapp/promisespromises/actions)
-[![Clojars Project](https://img.shields.io/clojars/v/com.github.yapsterapp/promisespromises.svg)](https://clojars.org/com.github.yapsterapp/promisespromises)
-[![cljdoc badge](https://cljdoc.org/badge/com.github.yapsterapp/promisespromises)](https://cljdoc.org/d/com.github.yapsterapp/promisespromises)
+[![Build Status](https://github.com/yapsterapp/a-frame/actions/workflows/clojure.yml/badge.svg)](https://github.com/yapsterapp/a-frame/actions)
+[![Clojars Project](https://img.shields.io/clojars/v/com.github.yapsterapp/a-frame.svg)](https://clojars.org/com.github.yapsterapp/a-frame)
+[![cljdoc badge](https://cljdoc.org/badge/com.github.yapsterapp/a-frame)](https://cljdoc.org/d/com.github.yapsterapp/a-frame)
 
 
 TODO - much documentation expansion
@@ -28,7 +28,7 @@ successfully used for implementing APIs and is perhaps useful client-side too
 * event handlers are pure, returning a single`{<effect-key> <effect-data>}` map,
 or a list of such maps (which will be processed strictly serially)
 * based around a pure-data driven async interceptor-chain
-[`prpr3.a-frame.interceptor-chain`](https://github.com/yapsterapp/promisespromises/blob/trunk/src/prpr/a_frame/interceptor_chain.cljc)
+[`a-frame.interceptor-chain`](https://github.com/yapsterapp/a-frame/blob/trunk/src/a_frame/interceptor_chain.cljc)
 and implemented on top of promesa and
 prpr3.streams. Being pure-data driven leads to some nice
 properties
