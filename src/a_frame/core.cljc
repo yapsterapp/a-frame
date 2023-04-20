@@ -9,12 +9,12 @@
    [a-frame.registry :as registry]
    [a-frame.router :as router]))
 
-;; like re-frame, but for backend stuff
-;; provide an app-context map to most of the core fns, from which an
-;; a-frame instance (with event-stream, handler registrations &c)
-;; can be extracted at :a-frame.app
-;; app-context will also be provided to event/fx/cofx handlers
-;; so they can do complex stuff
+;; like re-frame, but also for backend stuff. async friendly.
+;;
+;; create a router with an app-context map (containing context
+;; objects for effectful code e.g. db connections, kafka client).
+;; the app-context map will be provided to cofx and fx handlers
+;; (which are promise based), but not to event handlers (which are pure).
 
 (defn create-router
   "create an a-frame router"
