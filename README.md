@@ -7,40 +7,72 @@
 
 TODO - much documentation expansion
 
-A port of the [re-frame](https://github.com/day8/re-frame)
-event and effect handling machinery to the async domain, offering a 
-straightforward separation of pure and effectful code for both 
-Clojure and ClojureScript
+A-frame is a port of the [re-frame](https://github.com/day8/re-frame)
+event and effect handling machinery to the async domain. It offers a
+straightforward separation of pure and effectful code for both
+Clojure and ClojureScript.
 
-## a-frame
+## why?
 
-A-frame is a port of the non-view parts of
-[re-frame](https://github.com/day8/re-frame) - event-handling, cofx and
-fx - to the async domain. cofx and fx handlers are async functions, while event
-handlers remain pure functions. This
-makes it straightforward to cleanly separate pure and impure elements of a
-program. A-frame was originally developed for a back-end event-driven 
-game engine, but it has been found more generally useful and has been 
-successfully used for implementing APIs and is perhaps useful client-side too
+Everyone tells you to keep your side-effecting and pure code apart. A-frame
+helps you to do just that.
 
-* cofx handlers are async functions, returning a Promise of updated coeffects
-* fx handlers are async functions, returning a Promise of an ignored result
-* event handlers are pure, returning a single`{<effect-key> <effect-data>}` map,
-or a list of such maps (which will be processed strictly serially)
-* based around a pure-data driven async interceptor-chain
-[`a-frame.interceptor-chain`](https://github.com/yapsterapp/a-frame/blob/trunk/src/a_frame/interceptor_chain.cljc)
-and implemented on top of promesa and
-promisespromises.streams. Being pure-data driven leads to some nice
-properties
-  * interceptor contexts are fully de/serializable
-  * errors can include a 'resume-context' allowing for:
-    * automatic retry
-    * logging of the resume-context, allowing retry in a REPL
-* unlike re-frame, where `dispatch-sync` is uncommon,
-`promisespromises.a-frame/dispatch-sync` has been perhaps the most used type of dispatch
-with a-frame. `dispatch-sync` is actually an async fn, but it does not resolve
-the result promise until all effects (including transitive dispatches)
-resulting from the event have been processed
+## how
+
+A-frame uses roughly the same event-processing model as re-frame - `events`
+are handled in a 3 stage process:
+
+``` text
+[gather coeffects] -> [handle event] -> [process effects]
+```
+
+This process is implemented with an interceptor chain. Unlike
+re-frame, the a-frame interceptor chain is asynchronous - `:enter` or `:leave`
+fns in any stage may return a promise of their result.
+
+* Events are handled by an interceptor chain
+* The final interceptor in the chain is the `event-handler`
+  * an `event-handler` is a pure function
+* Prior interceptors are `coeffect` or `effect` handlers
+  * `coeffect` and `effect` handlers may have side-effects and may return
+    a promise of their result
+
+``` text
+-> [enter: coeffect-a] -> [enter: coeffect-b] -> [enter:         ] -> [enter:          ] -> [enter: handle-event] --|
+<- [leave:           ] <- [leave:           ] <- [leave: effect-d] <- [leave: effect-c ] <- [leave:             ] <-|
+```
+
+## simple data
+
+"simple" data means containing no opaque objects - i.e. no functions or
+other opaque types.
+
+## events
+
+Events are simple maps describing something that happened. An event 
+map must have an `:a-frame/type` key, which describes the type of the
+event and will be used to find a handler for processing the event.
+
+Note that this is different from re-frame, which generally defines 
+events as `[<event-key> ...]` vectors.
+The reason for this difference is to make it easier to read
+parameter extractor declarations for coeffects referencing values from
+the event - maps have named slots, whereas vectors only have positions.
+
+## coeffects
+
+Coeffect are a simple data map representing (possibly side-effecting)
+inputs gathered from the environment and required by the event-handler.
+A particular event handler has a chain of coeffect handlers, each of
+which identifies a particular coeffect handler by keyword.
+
+## effects
+
+Effects are a simple data structure (map) describing outputs from the event
+handler. Effects are either a map of `{<effect-key> <effect-data>}` or
+a vector of such maps. the `<effect-key>` keywords will be used to
+find a handler for a particular effect.
+
 
 ``` clojure
 (require '[promisespromises.a-frame :as af])
@@ -58,7 +90,7 @@ resulting from the event have been processed
 
 (af/reg-event-fx
   ::get-foo
-  [(af/inject-cofx ::load-foo {:id #promisespromises.cofx/path [:params :query :id]})]
+  [(af/inject-cofx ::load-foo {:id #a-frame.cofx/path [:params :query :id]})]
   (fn [{foo ::foo
         :as coeffects} event]
     [{:api/response {:foo foo}}]))
@@ -66,10 +98,10 @@ resulting from the event have been processed
 
 (def router (af/create-router {:api nil}))
 
-(def ctx (af/dispatch-sync router {:params {:query {:id "1000"}}} [::get-foo]))
+(def r (af/dispatch-sync router {:params {:query {:id "1000"}}} [::get-foo]))
 
 ;; unpick deref'ing a promise only works on clj
-(-> @ctx :a-frame/effects first :api/response)
+(-> @r :a-frame/effects first :api/response)
 ;; => {:foo {:id "1000", :name "foo"}}
 
 ```
