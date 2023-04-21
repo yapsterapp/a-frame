@@ -122,18 +122,18 @@
    default-transitive-coeffects?
    event-or-event-options]
   (let [{_ev schema/a-frame-event
-         ev-coeffects schema/a-frame-coeffects
+         ev-init-coeffects schema/a-frame-init-coeffects
          :as event-options} (events/coerce-event-options
-                              event-or-event-options)
+                             event-or-event-options)
         transitive-coeffects? (apply-transitive-coeffects?
                                default-transitive-coeffects?
                                event-options)]
     (if transitive-coeffects?
       (assoc
        event-options
-       schema/a-frame-coeffects
+       schema/a-frame-init-coeffects
        (merge ctx-coeffects
-              ev-coeffects))
+              ev-init-coeffects))
 
       event-options)))
 

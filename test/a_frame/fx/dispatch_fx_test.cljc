@@ -48,7 +48,7 @@
                     {schema/a-frame-id ::dispatch-fx-test-without-transitive-coeffects
                      :n 0}
 
-                    schema/a-frame-coeffects {::BAR "bar"}})]
+                    schema/a-frame-init-coeffects {::BAR "bar"}})]
 
         (is (= [0 2 4] @out-a))
 
@@ -85,7 +85,7 @@
                     {schema/a-frame-id ::dispatch-fx-test-with-transitive-coeffects
                      :n 0}
 
-                    schema/a-frame-coeffects {::BAR "bar"}})]
+                    schema/a-frame-init-coeffects {::BAR "bar"}})]
 
         (is (= [0 2 4] @out-a))
 
@@ -125,7 +125,7 @@
                     {schema/a-frame-id ::dispatch-sync-fx-test-without-transitive-coeffects
                      :n 0}
 
-                    schema/a-frame-coeffects {::BAR "bar"}})]
+                    schema/a-frame-init-coeffects {::BAR "bar"}})]
 
         (is (= [0 2 4] @out-a))
 
@@ -159,7 +159,7 @@
                    {schema/a-frame-event
                     {schema/a-frame-id ::dispatch-sync-fx-test-with-transitive-coeffects
                      :n 0}
-                    schema/a-frame-coeffects {::BAR "bar"}})]
+                    schema/a-frame-init-coeffects {::BAR "bar"}})]
 
         (is (= [0 2 4] @out-a))
 
