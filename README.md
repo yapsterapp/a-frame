@@ -9,13 +9,13 @@ TODO - much documentation expansion
 
 A-frame is a port of the [re-frame](https://github.com/day8/re-frame)
 event and effect handling machinery to the async domain. It offers a
-straightforward separation of pure and effectful code for both
+straightforward separation of pure and side-effecting code for both
 Clojure and ClojureScript.
 
 ## why?
 
 Everyone tells you to keep your side-effecting and pure code apart. A-frame
-helps you to do just that.
+helps you to do it.
 
 ## how
 
@@ -26,20 +26,20 @@ are handled in a 3 stage process:
 [gather coeffects] -> [handle event] -> [process effects]
 ```
 
-This process is implemented with an interceptor chain. Unlike
-re-frame, the a-frame interceptor chain is asynchronous - `:enter` or `:leave`
-fns in any stage may return a promise of their result.
+Like re-frame, this process is implemented with an interceptor chain but, unlike
+re-frame, the a-frame interceptor chain is asynchronous - the `:enter` or
+`:leave` fns in any interceptor may return a promise of their result.
 
 * Events are handled by an interceptor chain
 * The final interceptor in the chain is the `event-handler`
-  * an `event-handler` is a pure function
+  * an `event-handler` is always a pure function with no side effects
 * Prior interceptors are `coeffect` or `effect` handlers
   * `coeffect` and `effect` handlers may have side-effects and may return
     a promise of their result
 
 ``` text
--> [enter: coeffect-a] -> [enter: coeffect-b] -> [enter:         ] -> [enter:          ] -> [enter: handle-event] --|
-<- [leave:           ] <- [leave:           ] <- [leave: effect-d] <- [leave: effect-c ] <- [leave:             ] <-|
+-> [enter:               ] -> [enter: coeffect-a] -> [enter: coeffect-b] -> [enter: handle-event] --|
+<- [leave: handle-effects] <- [leave:           ] <- [leave:           ] <- [leave:             ] <-|
 ```
 
 ## simple data
@@ -49,19 +49,17 @@ other opaque types.
 
 ## events
 
-Events are simple maps describing something that happened. An event 
-map must have an `:a-frame/type` key, which describes the type of the
+Events are simple maps describing something that happened. An event
+map must have an `:a-frame/id` key, which describes the type of the
 event and will be used to find a handler for processing the event.
 
-Note that this is different from re-frame, which generally defines 
-events as `[<event-key> ...]` vectors.
-The reason for this difference is to make it easier to read
-parameter extractor declarations for coeffects referencing values from
-the event - maps have named slots, whereas vectors only have positions.
+Events can also be simple vectors of `[<id> ...]`, like they generally are
+in re-frame, but this is less preferred because it makes literal
+paths referencing the events less easy to understand.
 
 ## coeffects
 
-Coeffect are a simple data map representing (possibly side-effecting)
+Coeffects are a simple data map representing (possibly side-effecting)
 inputs gathered from the environment and required by the event-handler.
 A particular event handler has a chain of coeffect handlers, each of
 which identifies a particular coeffect handler by keyword.
@@ -73,14 +71,15 @@ handler. Effects are either a map of `{<effect-key> <effect-data>}` or
 a vector of such maps. the `<effect-key>` keywords will be used to
 find a handler for a particular effect.
 
+## simple example
 
 ``` clojure
-(require '[promisespromises.a-frame :as af])
+(require '[a-frame.core :as af])
 
 (af/reg-cofx
   ::load-foo
-  (fn [app coeffects {id :id}]
-    (assoc coeffects ::foo {:id id :name "foo"})))
+  (fn [app coeffects {id :id url :url}]
+    (assoc coeffects ::foo {:id (str url "/" id) :name "foo"})))
 
 (af/reg-fx
   :api/response
@@ -90,18 +89,28 @@ find a handler for a particular effect.
 
 (af/reg-event-fx
   ::get-foo
-  [(af/inject-cofx ::load-foo {:id #a-frame.cofx/path [:params :query :id]})]
-  (fn [{foo ::foo
-        :as coeffects} event]
-    [{:api/response {:foo foo}}]))
 
+  [(af/inject-cofx
+    ::load-foo
+    {:id #a-frame.event/path [::foo-id]
+     :url #a-frame.cofx/path [:config :api-url]})]
+
+  (fn [{foo ::foo
+        :as coeffects}
+       event]
+    {:api/response {:foo foo}}))
 
 (def router (af/create-router {:api nil}))
 
-(def r (af/dispatch-sync router {:params {:query {:id "1000"}}} [::get-foo]))
+(def r (af/dispatch-sync
+          router
+          {:config {:api-url "http://foo.com/api"}} ;; initial coeffects
+          {:a-frame/id ::get-foo
+           ::foo-id "1000"} ;; the event
+          ))
 
 ;; unpick deref'ing a promise only works on clj
-(-> @r :a-frame/effects first :api/response)
-;; => {:foo {:id "1000", :name "foo"}}
+(-> @r :a-frame/effects :api/response)
+;; => {:foo {:id "http://foo.com/api/1000", :name "foo"}}
 
 ```
