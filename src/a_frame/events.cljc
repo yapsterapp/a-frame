@@ -122,7 +122,7 @@
 
    event-or-event-options]
 
-  (prn "HANDLE" event-or-event-options)
+  ;; (prn "HANDLE" event-or-event-options)
 
   (let [{event schema/a-frame-event
          init-coeffects schema/a-frame-init-coeffects

@@ -378,7 +378,7 @@
                                  (if @throw?-a
                                    (do
                                      (reset! throw?-a false)
-                                     (prn "THROW")
+                                     ;; (prn "THROW")
                                      (throw (ex-info "boo" {})))
                                    x))
                    ::sut/leave (fn [x] (assoc x :left? true))}]]]

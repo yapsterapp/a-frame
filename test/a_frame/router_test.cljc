@@ -20,9 +20,9 @@
 
 (def error-val (atom nil))
 
-(use-fixtures :once (with-log-level-fixture :warn))
-
-(use-fixtures :each registry.test/reset-registry)
+(use-fixtures :each (compose-fixtures
+                     registry.test/reset-registry
+                     (with-log-level-fixture :warn)))
 
 (def test-app-ctx {::FOO "foo"})
 
