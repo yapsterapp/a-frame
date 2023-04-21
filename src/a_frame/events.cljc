@@ -77,26 +77,27 @@
     schema/a-frame-kind-event
     id)))
 
-(mx/defn coerce-extended-event
-  "Event|ExtendedEvent -> ExtendedEvent"
-  [event-or-extended-event :- schema/EventOrExtendedEvent]
-  (if (map? event-or-extended-event)
-    event-or-extended-event
-    {schema/a-frame-event event-or-extended-event}))
+(mx/defn coerce-event-options
+  "Event|EventOptions -> EventOptions"
+  [event-or-event-options :- schema/EventOrEventOptions]
+  (if (contains? event-or-event-options schema/a-frame-event)
+    event-or-event-options
+    {schema/a-frame-event event-or-event-options}))
 
 (defn handle
   [{app-ctx schema/a-frame-app-ctx
     a-frame-router schema/a-frame-router
     global-interceptors schema/a-frame-router-global-interceptors}
 
-   event-or-extended-ev]
+   event-or-event-options]
 
-  ;; (prn "HANDLE" event-or-extended-ev)
+  (prn "HANDLE" event-or-event-options)
 
-  (let [{[event-id & _event-args :as event-v] schema/a-frame-event
-         init-coeffects schema/a-frame-coeffects
+  (let [{{event-id schema/a-frame-id
+          :as event} schema/a-frame-event
+         init-coeffects schema/a-frame-init-coeffects
          modify-interceptor-chain schema/a-frame-event-modify-interceptor-chain
-         :as _router-ev} (coerce-extended-event event-or-extended-ev)
+         :as _event-options} (coerce-event-options event-or-event-options)
 
         interceptors (registry/get-handler
                       schema/a-frame-kind-event
@@ -118,7 +119,7 @@
                          ;; so cofx handlers can access it
                          (assoc-in [schema/a-frame-coeffects
                                     schema/a-frame-coeffect-event]
-                                   event-v))]
+                                   event))]
 
         (interceptor-chain/execute
          app-ctx
@@ -128,5 +129,5 @@
 
       (throw
        (err/ex-info
-        (prn-str ::no-event-handler event-v)
-        {:event-v event-v})))))
+        (prn-str ::no-event-handler event)
+        {:event event})))))

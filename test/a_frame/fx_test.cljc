@@ -262,25 +262,26 @@
 
           _ (events/reg-event-fx
              ::dispatch-fx-test-without-transitive-coeffects
-             (fn [cofx [_ n :as event-v]]
+             (fn [cofx {n :n :as event}]
                ;; only the first event should have the ::BAR coeffect
                (if (= 0 n)
-                 (is (= {schema/a-frame-coeffect-event event-v
+                 (is (= {schema/a-frame-coeffect-event event
                          ::BAR "bar"} cofx))
-                 (is (= {schema/a-frame-coeffect-event event-v} cofx)))
+                 (is (= {schema/a-frame-coeffect-event event} cofx)))
 
                (swap! out-a conj n)
 
                (when (<= n 3)
 
                  {:a-frame/dispatch
-                  [::dispatch-fx-test-without-transitive-coeffects
-                   (+ n 2)]})))]
+                  {schema/a-frame-id ::dispatch-fx-test-without-transitive-coeffects
+                   :n (+ n 2)}})))]
 
       (pr/let [_r (router/dispatch-sync
                    router
                    {schema/a-frame-event
-                    [::dispatch-fx-test-without-transitive-coeffects 0]
+                    {schema/a-frame-id ::dispatch-fx-test-without-transitive-coeffects
+                     :n 0}
 
                     schema/a-frame-coeffects {::BAR "bar"}})]
 
@@ -296,10 +297,10 @@
 
           _ (events/reg-event-fx
              ::dispatch-fx-test-with-transitive-coeffects
-             (fn [cofx [_ n :as event-v]]
+             (fn [cofx {n :n :as event}]
 
                ;; all events should have the ::BAR coeffect
-               (is (= {schema/a-frame-coeffect-event event-v
+               (is (= {schema/a-frame-coeffect-event event
                        ::BAR "bar"} cofx))
 
                (swap! out-a conj n)
@@ -308,15 +309,16 @@
 
                  {:a-frame/dispatch
                   {schema/a-frame-event
-                   [::dispatch-fx-test-with-transitive-coeffects
-                    (+ n 2)]
+                   {schema/a-frame-id ::dispatch-fx-test-with-transitive-coeffects
+                    :n (+ n 2)}
 
                    schema/a-frame-event-transitive-coeffects? true}})))]
 
       (pr/let [_r (router/dispatch-sync
                    router
                    {schema/a-frame-event
-                    [::dispatch-fx-test-with-transitive-coeffects 0]
+                    {schema/a-frame-id ::dispatch-fx-test-with-transitive-coeffects
+                     :n 0}
 
                     schema/a-frame-coeffects {::BAR "bar"}})]
 
@@ -334,12 +336,12 @@
 
           _ (events/reg-event-fx
              ::dispatch-sync-fx-test-without-transitive-coeffects
-             (fn [cofx [_ n :as event-v]]
+             (fn [cofx {n :n :as event}]
                ;; only the first event should have the ::BAR coeffect
                (if (= 0 n)
-                 (is (= {schema/a-frame-coeffect-event event-v
+                 (is (= {schema/a-frame-coeffect-event event
                          ::BAR "bar"} cofx))
-                 (is (= {schema/a-frame-coeffect-event event-v} cofx)))
+                 (is (= {schema/a-frame-coeffect-event event} cofx)))
 
                (swap! out-a conj n)
 
@@ -347,15 +349,16 @@
 
                  {:a-frame/dispatch-sync
                   {schema/a-frame-event
-                   [::dispatch-sync-fx-test-without-transitive-coeffects
-                    (+ n 2)]
+                   {schema/a-frame-id ::dispatch-sync-fx-test-without-transitive-coeffects
+                    :n (+ n 2)}
 
                    schema/a-frame-event-transitive-coeffects? false}})))]
 
       (pr/let [_r (router/dispatch-sync
                    router
                    {schema/a-frame-event
-                    [::dispatch-sync-fx-test-without-transitive-coeffects 0]
+                    {schema/a-frame-id ::dispatch-sync-fx-test-without-transitive-coeffects
+                     :n 0}
 
                     schema/a-frame-coeffects {::BAR "bar"}})]
 
@@ -371,10 +374,10 @@
 
           _ (events/reg-event-fx
              ::dispatch-sync-fx-test-with-transitive-coeffects
-             (fn [cofx [_ n :as event-v]]
+             (fn [cofx {n :n :as event}]
 
                ;; all events should have the ::BAR coeffect
-               (is (= {schema/a-frame-coeffect-event event-v
+               (is (= {schema/a-frame-coeffect-event event
                        ::BAR "bar"} cofx))
 
                (swap! out-a conj n)
@@ -383,13 +386,14 @@
 
                  {:a-frame/dispatch-sync
                   {schema/a-frame-event
-                   [::dispatch-sync-fx-test-with-transitive-coeffects
-                    (+ n 2)]}})))]
+                   {schema/a-frame-id ::dispatch-sync-fx-test-with-transitive-coeffects
+                    :n (+ n 2)}}})))]
 
       (pr/let [_r (router/dispatch-sync
                    router
                    {schema/a-frame-event
-                    [::dispatch-sync-fx-test-with-transitive-coeffects 0]
+                    {schema/a-frame-id ::dispatch-sync-fx-test-with-transitive-coeffects
+                     :n 0}
                     schema/a-frame-coeffects {::BAR "bar"}})]
 
         (is (= [0 2 4] @out-a))
@@ -405,26 +409,27 @@
 
           _ (events/reg-event-fx
              ::dispatch-n-fx-test-without-transitive-coeffects
-             (fn [cofx [_ n :as event-v]]
+             (fn [cofx {n :n :as event}]
                ;; only the first event should have the ::BAR coeffect
                (if (= 0 n)
-                 (is (= {schema/a-frame-coeffect-event event-v
+                 (is (= {schema/a-frame-coeffect-event event
                          ::BAR "bar"} cofx))
-                 (is (= {schema/a-frame-coeffect-event event-v} cofx)))
+                 (is (= {schema/a-frame-coeffect-event event} cofx)))
 
                (swap! out-a conj n)
 
                (when (<= n 3)
 
                  {:a-frame/dispatch-n
-                  [[::dispatch-n-fx-test-without-transitive-coeffects
-                    (+ n 2)]]})))]
+                  [{schema/a-frame-id ::dispatch-n-fx-test-without-transitive-coeffects
+                    :n (+ n 2)}]})))]
 
       (pr/let [_r (router/dispatch-sync
                    router
                    {schema/a-frame-event
-                    [::dispatch-n-fx-test-without-transitive-coeffects 0]
-                    schema/a-frame-coeffects {::BAR "bar"}})]
+                    {schema/a-frame-id ::dispatch-n-fx-test-without-transitive-coeffects
+                     :n 0}
+                    schema/a-frame-init-coeffects {::BAR "bar"}})]
 
         (is (= [0 2 4] @out-a))
 
@@ -438,10 +443,10 @@
 
           _ (events/reg-event-fx
              ::dispatch-n-fx-test-with-transitive-coeffects
-             (fn [cofx [_ n :as event-v]]
+             (fn [cofx {n :n :as event}]
 
                ;; all events should have the ::BAR coeffect
-               (is (= {schema/a-frame-coeffect-event event-v
+               (is (= {schema/a-frame-coeffect-event event
                        ::BAR "bar"} cofx))
 
                (swap! out-a conj n)
@@ -450,16 +455,17 @@
 
                  {:a-frame/dispatch-n
                   [{schema/a-frame-event
-                    [::dispatch-n-fx-test-with-transitive-coeffects
-                     (+ n 2)]
+                    {schema/a-frame-id ::dispatch-n-fx-test-with-transitive-coeffects
+                     :n (+ n 2)}
 
                     schema/a-frame-event-transitive-coeffects? true}]})))]
 
       (pr/let [_r (router/dispatch-sync
                    router
                    {schema/a-frame-event
-                    [::dispatch-n-fx-test-with-transitive-coeffects 0]
-                    schema/a-frame-coeffects {::BAR "bar"}})]
+                    {schema/a-frame-id ::dispatch-n-fx-test-with-transitive-coeffects
+                     :n 0}
+                    schema/a-frame-init-coeffects {::BAR "bar"}})]
 
         (is (= [0 2 4] @out-a))
 
@@ -474,12 +480,12 @@
 
           _ (events/reg-event-fx
              ::dispatch-n-sync-fx-test-without-transitive-coeffects
-             (fn [cofx [_ n :as event-v]]
+             (fn [cofx {n :n :as event}]
                ;; only the first event should have the ::BAR coeffect
                (if (= 0 n)
-                 (is (= {schema/a-frame-coeffect-event event-v
+                 (is (= {schema/a-frame-coeffect-event event
                          ::BAR "bar"} cofx))
-                 (is (= {schema/a-frame-coeffect-event event-v} cofx)))
+                 (is (= {schema/a-frame-coeffect-event event} cofx)))
 
                (swap! out-a conj n)
 
@@ -487,16 +493,17 @@
 
                  {:a-frame/dispatch-n-sync
                   [{schema/a-frame-event
-                    [::dispatch-n-sync-fx-test-without-transitive-coeffects
-                     (+ n 2)]
+                    {schema/a-frame-id ::dispatch-n-sync-fx-test-without-transitive-coeffects
+                     :n (+ n 2)}
 
                     schema/a-frame-event-transitive-coeffects? false}]})))]
 
       (pr/let [_r (router/dispatch-sync
                    router
                    {schema/a-frame-event
-                    [::dispatch-n-sync-fx-test-without-transitive-coeffects 0]
-                    schema/a-frame-coeffects {::BAR "bar"}})]
+                    {schema/a-frame-id ::dispatch-n-sync-fx-test-without-transitive-coeffects
+                     :n 0}
+                    schema/a-frame-init-coeffects {::BAR "bar"}})]
 
         (is (= [0 2 4] @out-a))
 
@@ -510,10 +517,10 @@
 
           _ (events/reg-event-fx
              ::dispatch-n-sync-fx-test-with-transitive-coeffects
-             (fn [cofx [_ n :as event-v]]
+             (fn [cofx {n :n :as event}]
 
                ;; all events should have the ::BAR coeffect
-               (is (= {schema/a-frame-coeffect-event event-v
+               (is (= {schema/a-frame-coeffect-event event
                        ::BAR "bar"} cofx))
 
                (swap! out-a conj n)
@@ -522,13 +529,14 @@
 
                  {:a-frame/dispatch-n-sync
                   [{schema/a-frame-event
-                    [::dispatch-n-sync-fx-test-with-transitive-coeffects
-                     (+ n 2)]}]})))]
+                    {schema/a-frame-id ::dispatch-n-sync-fx-test-with-transitive-coeffects
+                     :n (+ n 2)}}]})))]
       (pr/let [_r (router/dispatch-sync
                    router
                    {schema/a-frame-event
-                    [::dispatch-n-sync-fx-test-with-transitive-coeffects 0]
-                    schema/a-frame-coeffects {::BAR "bar"}})]
+                    {schema/a-frame-id ::dispatch-n-sync-fx-test-with-transitive-coeffects
+                     :n 0}
+                    schema/a-frame-init-coeffects {::BAR "bar"}})]
 
         (is (= [0 2 4] @out-a))
 

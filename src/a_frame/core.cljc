@@ -38,7 +38,7 @@
   "add some initial coeffects to an event"
   [event init-coeffects]
   (assoc
-     (events/coerce-extended-event event)
+     (events/coerce-event-options event)
      schema/a-frame-coeffects init-coeffects))
 
 (defn dispatch
@@ -96,7 +96,7 @@
    (router/dispatch-sync
     router
     (assoc
-     (events/coerce-extended-event event)
+     (events/coerce-event-options event)
 
      schema/a-frame-event-modify-interceptor-chain
      (partial modify-interceptors-for-coeffects n))))

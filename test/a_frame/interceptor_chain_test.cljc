@@ -1,14 +1,12 @@
 (ns a-frame.interceptor-chain-test
   (:require
    [promisespromises.test :refer [deftest tlet testing is use-fixtures]]
-   [promisespromises.test.malli :as test.malli]
    [promesa.core :as pr]
    [promisespromises.promise :as prpr]
    [a-frame.schema :as af.schema]
    [a-frame.registry.test :as registry.test]
    [a-frame.interceptor-chain :as sut]))
 
-(use-fixtures :once test.malli/instrument-fns-fixture)
 (use-fixtures :each registry.test/reset-registry)
 
 (defn epoch

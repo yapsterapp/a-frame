@@ -30,14 +30,17 @@
     (is (= [::foo-interceptor ::bar-interceptor]
            (registry/get-handler schema/a-frame-kind-event ::foo)))))
 
-(deftest coerce-extended-event-test
-  (is (= {schema/a-frame-event [::foo 100]}
-         (sut/coerce-extended-event [::foo 100])))
-  (is (= {schema/a-frame-event [::foo 100]
-          schema/a-frame-coeffects {::bar 200}}
-         (sut/coerce-extended-event
-          {schema/a-frame-event [::foo 100]
-           schema/a-frame-coeffects {::bar 200}}))))
+(deftest coerce-event-options-test
+
+  (is (= {schema/a-frame-event {schema/a-frame-id ::foo :val 100}}
+         (sut/coerce-event-options
+          {schema/a-frame-id ::foo :val 100})))
+
+  (is (= {schema/a-frame-event {schema/a-frame-id ::foo :val 100}
+          schema/a-frame-init-coeffects {::bar 200}}
+         (sut/coerce-event-options
+          {schema/a-frame-event {schema/a-frame-id ::foo :val 100}
+           schema/a-frame-init-coeffects {::bar 200}}))))
 
 (deftest handle-test
   (testing "runs interceptor chain with co-fx, event-handler and fx"
@@ -53,7 +56,7 @@
           _ (cofx/reg-cofx
              ::cofx-bar
              (fn [app
-                 {[_ev-key ev-data] schema/a-frame-coeffect-event
+                 {{ev-data :val} schema/a-frame-coeffect-event
                   :as coeffects}
                  cofx-data]
                (is (= ::app app))
@@ -71,13 +74,13 @@
                (is (= {schema/a-frame-coeffect-event event
                        ::cofx-bar 200}
                       coeffects))
-               (is (= [::event-blah 100] event))
+               (is (= {schema/a-frame-id ::event-blah :val 100} event))
                {::fx-foo {::coeffects coeffects
                           ::event event}}))]
       (pr/let [[k v] (prpr/merge-always
                       (sut/handle
-                           {schema/a-frame-app-ctx ::app}
-                           [::event-blah 100]))
+                       {schema/a-frame-app-ctx ::app}
+                       {schema/a-frame-id ::event-blah :val 100}))
 
                {h-r-app-ctx schema/a-frame-app-ctx
                 h-r-queue ::interceptor-chain/queue
@@ -92,22 +95,24 @@
         (is (= nil (ex-message v)))
 
         (is (= {::fx-foo {::coeffects
-                          {schema/a-frame-coeffect-event [::event-blah 100]
+                          {schema/a-frame-coeffect-event {schema/a-frame-id ::event-blah :val 100}
                            ::cofx-bar 200}
 
-                          ::event [::event-blah 100]}} @fx-a))
+                          ::event {schema/a-frame-id ::event-blah :val 100}}} @fx-a))
 
 
         (is (= ::app h-r-app-ctx))
         (is (= [] h-r-queue))
         (is (= '() h-r-stack))
-        (is (= {schema/a-frame-coeffect-event [::event-blah 100]
+        (is (= {schema/a-frame-coeffect-event {schema/a-frame-id ::event-blah :val 100}
                 ::cofx-bar 200} h-r-coeffects))
         (is (= {::fx-foo {::coeffects
-                          {schema/a-frame-coeffect-event [::event-blah 100]
+                          {schema/a-frame-coeffect-event
+                           {schema/a-frame-id ::event-blah :val 100}
+
                            ::cofx-bar 200}
 
-                          ::event [::event-blah 100]}}
+                          ::event {schema/a-frame-id ::event-blah :val 100}}}
                @fx-a
                h-r-effects)))))
 
@@ -125,7 +130,7 @@
                (is (= {schema/a-frame-coeffect-event event
                        ::cofx-init 550}
                       coeffects))
-               (is (= [::handle-test-init-ctx 100] event))
+               (is (= {schema/a-frame-id ::handle-test-init-ctx :val 100} event))
                {::fx-bar {::coeffects coeffects
                           ::event event}}))]
       (pr/let [{h-r-app-ctx schema/a-frame-app-ctx
@@ -138,21 +143,26 @@
                            {schema/a-frame-app-ctx ::app
                             schema/a-frame-router ::a-frame}
 
-                           {schema/a-frame-coeffects {::cofx-init 550}
-                            schema/a-frame-event [::handle-test-init-ctx 100]})]
+                           {schema/a-frame-init-coeffects {::cofx-init 550}
+                            schema/a-frame-event
+                            {schema/a-frame-id ::handle-test-init-ctx :val 100}})]
 
         (is (= ::app h-r-app-ctx))
         (is (= ::a-frame h-r-a-frame-router))
         (is (= [] h-r-queue))
         (is (= '() h-r-stack))
-        (is (= {schema/a-frame-coeffect-event [::handle-test-init-ctx 100]
+        (is (= {schema/a-frame-coeffect-event
+                {schema/a-frame-id ::handle-test-init-ctx :val 100}
                 ::cofx-init 550}
                h-r-coeffects))
-        (is (= {::fx-bar {::event [::handle-test-init-ctx 100]
+        (is (= {::fx-bar {::event {schema/a-frame-id ::handle-test-init-ctx :val 100}
                           ::coeffects {schema/a-frame-coeffect-event
-                                       [::handle-test-init-ctx 100]
+                                       {schema/a-frame-id ::handle-test-init-ctx :val 100}
 
                                        ::cofx-init 550}}}
                @fx-a
-               h-r-effects)))))
-  )
+               h-r-effects))))))
+
+;; TODO tests
+(deftest malformed-event-test
+  (testing "event with no id"))

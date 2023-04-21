@@ -108,7 +108,7 @@
 (defn apply-transitive-coeffects?
   [default-transitive-coeffects?
    {transitive-coeffects? schema/a-frame-event-transitive-coeffects?
-    :as _extended-event}]
+    :as _event-options}]
   (if (some? transitive-coeffects?)
     transitive-coeffects?
     default-transitive-coeffects?))
@@ -120,22 +120,22 @@
   [{ctx-coeffects schema/a-frame-coeffects
     :as _context}
    default-transitive-coeffects?
-   event-or-extended-event]
+   event-or-event-options]
   (let [{_ev schema/a-frame-event
          ev-coeffects schema/a-frame-coeffects
-         :as extended-event} (events/coerce-extended-event
-                              event-or-extended-event)
+         :as event-options} (events/coerce-event-options
+                              event-or-event-options)
         transitive-coeffects? (apply-transitive-coeffects?
                                default-transitive-coeffects?
-                               extended-event)]
+                               event-options)]
     (if transitive-coeffects?
       (assoc
-       extended-event
+       event-options
        schema/a-frame-coeffects
        (merge ctx-coeffects
               ev-coeffects))
 
-      extended-event)))
+      event-options)))
 
 ;; standard fx
 
@@ -145,7 +145,7 @@
 (mx/defn dispatch
    [{router schema/a-frame-router
           :as context}
-         event :- schema/EventOrExtendedEvent]
+         event :- schema/EventOrEventOptions]
    (router/dispatch
     router
     (xev-with-all-coeffects context false event)))
@@ -160,7 +160,7 @@
 (mx/defn dispatch-n
    [{router schema/a-frame-router
           :as context}
-         events :- schema/EventsOrExtendedEvents]
+         events :- schema/EventOrEventOptionsList]
    (router/dispatch-n
     router
     (map (partial xev-with-all-coeffects context false) events)))
@@ -178,7 +178,7 @@
 (mx/defn dispatch-sync
   [{router schema/a-frame-router
     :as context}
-   event :- schema/EventOrExtendedEvent]
+   event :- schema/EventOrEventOptions]
   (router/dispatch-sync
    router
    (xev-with-all-coeffects context true event)))
@@ -196,7 +196,7 @@
 (mx/defn dispatch-n-sync
   [{router schema/a-frame-router
     :as context}
-   events :- schema/EventsOrExtendedEvents]
+   events :- schema/EventOrEventOptionsList]
   (router/dispatch-n-sync
    router
    (map (partial xev-with-all-coeffects context true) events)))
