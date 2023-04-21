@@ -6,7 +6,24 @@
    [a-frame.registry :as registry]
    [a-frame.std-interceptors :as std-interceptors]
    [a-frame.interceptor-chain :as interceptor-chain]
+   [a-frame.multimethods :as mm]
    [taoensso.timbre :refer [warn]]))
+
+
+;; maps are a nicer representation of events, since
+;; their fields have names, which makes paths easier to
+;; read
+(defmethod mm/event->id :map
+  [{id schema/a-frame-id
+    :as _ev}]
+  id)
+
+;; vectors are the default re-frame representation of events.
+;; their fields only have index names, which makes paths
+;; hard to read
+(defmethod mm/event->id :vector
+  [[id :as _ev]]
+  id)
 
 (defn flatten-and-remove-nils
   [_id interceptors]
@@ -80,9 +97,23 @@
 (mx/defn coerce-event-options
   "Event|EventOptions -> EventOptions"
   [event-or-event-options :- schema/EventOrEventOptions]
-  (if (contains? event-or-event-options schema/a-frame-event)
+
+  (cond
+
+    (vector? event-or-event-options)
+    {schema/a-frame-event event-or-event-options}
+
+    (and (map? event-or-event-options)
+         (contains? event-or-event-options schema/a-frame-id))
+    {schema/a-frame-event event-or-event-options}
+
+    (and (map? event-or-event-options)
+         (contains? event-or-event-options schema/a-frame-event))
     event-or-event-options
-    {schema/a-frame-event event-or-event-options}))
+
+    :else
+    (throw (ex-info "malformed event-or-event-options"
+                    {:event-or-event-options event-or-event-options}))))
 
 (defn handle
   [{app-ctx schema/a-frame-app-ctx
@@ -93,11 +124,12 @@
 
   (prn "HANDLE" event-or-event-options)
 
-  (let [{{event-id schema/a-frame-id
-          :as event} schema/a-frame-event
+  (let [{event schema/a-frame-event
          init-coeffects schema/a-frame-init-coeffects
          modify-interceptor-chain schema/a-frame-event-modify-interceptor-chain
          :as _event-options} (coerce-event-options event-or-event-options)
+
+        event-id (mm/event->id event)
 
         interceptors (registry/get-handler
                       schema/a-frame-kind-event
