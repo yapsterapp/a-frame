@@ -48,7 +48,7 @@
    they don't yet have the Event associated with them"
   [:map-of :keyword :any])
 
-(def Event
+(def MapEvent
   "an event as dispatched by applications"
   [:map
    ;; mandatory id field
@@ -56,6 +56,12 @@
 
    ;; open to any other keys as required by an event handler
    ])
+
+(def VectorEvent
+  [:cat :keyword [:* :any]])
+
+(def Event
+  [:or MapEvent VectorEvent])
 
 (def EventOptions
   "an event along with some options affecting event processing"

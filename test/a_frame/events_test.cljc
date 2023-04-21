@@ -161,6 +161,43 @@
 
                                        ::cofx-init 550}}}
                @fx-a
+               h-r-effects)))))
+
+  (testing "handles a vector event"
+    (let [_ (fx/reg-fx
+             ::handle-vec-blah
+             (fn [_app data]
+               (is (= 100 data))))
+          _ (sut/reg-event-fx
+             ::event-vector
+             (fn [coeffects event]
+               (is (= {schema/a-frame-coeffect-event event}
+                      coeffects))
+               (is (= [::event-vector 100] event))
+               {::handle-vec-blah 100}))]
+      (pr/let [[k v] (prpr/merge-always
+                      (sut/handle
+                       {schema/a-frame-app-ctx ::app}
+                       [::event-vector 100]))
+
+               {h-r-app-ctx schema/a-frame-app-ctx
+                h-r-queue ::interceptor-chain/queue
+                h-r-stack ::interceptor-chain/stack
+                h-r-coeffects schema/a-frame-coeffects
+                h-r-effects schema/a-frame-effects
+                :as _h-r} (when (= ::prpr/ok k)
+                            v)]
+
+        (is (= ::prpr/ok k))
+        (is (= nil (ex-data v)))
+        (is (= nil (ex-message v)))
+
+        (is (= ::app h-r-app-ctx))
+        (is (= [] h-r-queue))
+        (is (= '() h-r-stack))
+        (is (= {schema/a-frame-coeffect-event [::event-vector 100]}
+               h-r-coeffects))
+        (is (= {::handle-vec-blah 100}
                h-r-effects))))))
 
 ;; TODO tests
