@@ -133,11 +133,11 @@
   [context :- intc.schema/InterceptorContext]
   (assoc context ::queue []))
 
-(mx/defn ^:always-validate clear-errors
+(mx/defn ^:always-validate clear-error
   :- intc.schema/InterceptorContext
-  "Removes any associated `::errors` from `context`"
+  "Removes any associated `::error` from `context`"
   [context :- intc.schema/InterceptorContext]
-  (dissoc context ::errors))
+  (dissoc context ::error))
 
 (mx/defn ^:always-validate register-interceptor
   [interceptor-key :- :keyword
@@ -271,7 +271,7 @@
     (maybe-execute-interceptor-fn-thunk thunk context)))
 
 (defn wrap-interceptor-error
-  "wrap an exception and add to the interceptor errors"
+  "wrap an exception and record the error"
   [resume-context
    new-context
    e]
@@ -280,7 +280,7 @@
       ;; add an error referencing the context,
       ;; which can be used to resume at the
       ;; point of failure
-      (update ::errors conj (wrap-error resume-context e))))
+      (assoc ::error (wrap-error resume-context e))))
 
 ;; processing fns
 
@@ -291,11 +291,11 @@
     _history ::history
     :as context}
    interceptor-spec
-   history]
+   new-history]
   (-> context
       (assoc ::queue (vec (rest queue)))
       (assoc ::stack (conj stack interceptor-spec))
-      (update ::history conj history)))
+      (update ::history conj new-history)))
 
 (mx/defn enter-next
   "Executes the next `::enter` interceptor queued within `context`, returning a
@@ -310,11 +310,11 @@
 
     (let [interceptor-spec (first queue)
 
-          [history thunk] (interceptor-fn-history-thunk
-                           ::enter
-                           interceptor-spec
-                           context
-                           nil)]
+          [new-history thunk] (interceptor-fn-history-thunk
+                               ::enter
+                               interceptor-spec
+                               context
+                               nil)]
 
       (-> (maybe-execute-interceptor-fn-thunk thunk context)
 
@@ -327,7 +327,7 @@
              (after-enter-update-context
               ctx
               interceptor-spec
-              history)))
+              new-history)))
 
           (prpr/catch-always
            (partial wrap-interceptor-error
@@ -335,7 +335,7 @@
                     (after-enter-update-context
                      context
                      interceptor-spec
-                     history)))
+                     new-history)))
 
           (pr/chain
            (fn [{queue ::queue :as c}]
@@ -355,13 +355,30 @@
   "update a context after a leave fn has been processed"
   [{stack ::stack
     _history ::history
-    [_error :as _errors] ::errors
+    _error ::error
     :as context}
+   interceptor-fn-key
+   has-thunk?
    _interceptor-spec
-   history]
-  (-> context
-      (assoc ::stack (pop stack))
-      (update ::history conj history)))
+   new-history]
+  (condp = interceptor-fn-key
+    ::leave ;; normal leave fn
+    (-> context
+        (assoc ::stack (pop stack))
+        (update ::history conj new-history))
+
+    ::error
+    (cond-> context
+      true (assoc ::stack (pop stack))
+      true (update ::history conj new-history)
+      ;; only clear the error if there was a thunk which
+      ;; executed normally
+      has-thunk? (dissoc ::error))
+
+    ::catch ;; failure of a leave or error handler
+    (-> context
+        (assoc ::stack (pop stack))
+        (update ::history conj new-history))))
 
 (mx/defn leave-next
   "Executes the next `::leave` or `::error` interceptor on the stack within
@@ -369,7 +386,7 @@
   [[pr-loop-context]] action to take"
   [{stack ::stack
     _history ::history
-    [error :as _errors] ::errors
+    error ::error
     :as context} :- intc.schema/InterceptorContext]
 
   (if (empty? stack)
@@ -379,11 +396,13 @@
 
           interceptor-fn-key (if (some? error) ::error ::leave)
 
-          [history thunk] (interceptor-fn-history-thunk
-                           interceptor-fn-key
-                           interceptor-spec
-                           context
-                           error)]
+          [new-history thunk] (interceptor-fn-history-thunk
+                               interceptor-fn-key
+                               interceptor-spec
+                               context
+                               error)
+
+          has-thunk? (some? thunk)]
 
       (-> (maybe-execute-interceptor-fn-thunk thunk context)
 
@@ -395,16 +414,20 @@
            (fn [ctx]
              (after-leave-update-context
               ctx
+              interceptor-fn-key
+              has-thunk?
               interceptor-spec
-              history)))
+              new-history)))
 
           (prpr/catch-always
            (partial wrap-interceptor-error
                     context
                     (after-leave-update-context
                      context
+                     ::catch
+                     false
                      interceptor-spec
-                     history)))
+                     new-history)))
 
           (pr/chain
            (fn [{stack ::stack :as c}]
@@ -426,44 +449,21 @@
 
 ;; the main interaction fn
 
-(defn default-error-handler
-  [e]
-  (throw e))
-
-(defn default-suppressed-error-handler
-  [errors]
-  (warn (str "suppressed (" (count errors) ")"
-             " errors from interceptor execution"))
-  (doseq [e errors]
-    (warn e)))
+(defn final-error-handler
+  [{err ::error
+    :as ctx}]
+  (if (some? err)
+    (throw err)
+    ctx))
 
 (mx/defn execute*
-  ([context :- intc.schema/InterceptorContext]
-   (execute*
-    default-error-handler
-    default-suppressed-error-handler
-    context))
+  "execute a context"
+  [context :- intc.schema/InterceptorContext]
 
-  ([error-handler
-    suppressed-error-handler
-    context :- intc.schema/InterceptorContext]
-
-   (pr/chain
-    (enter-all context)
-    leave-all
-    (fn [{[err & other-errs] ::errors :as c}]
-      (if (some? err)
-        (do
-
-          (when (not-empty other-errs)
-            (prpr/catch-always
-             (suppressed-error-handler other-errs)
-             (fn [e]
-               (error e "error in suppressed-error-handler"))))
-
-          (error-handler err))
-
-        c)))))
+  (pr/chain
+   (enter-all context)
+   leave-all
+   final-error-handler))
 
 (mx/defn ^:always-validate execute
   "Returns a Promise encapsulating the execution of the given [[InterceptorContext]].
@@ -492,32 +492,18 @@
 (defn resume
   "resume a failed interceptor chain, from either
    a thrown exception or a logged resume-context"
-  ([app-ctx
-    a-frame-router
-    err-or-resume-context]
-   (resume
-    app-ctx
-    a-frame-router
-    default-error-handler
-    default-suppressed-error-handler
-    err-or-resume-context))
+  [app-ctx
+   a-frame-router
+   err-or-resume-context]
+  (let [ctx (if (map? err-or-resume-context)
+              err-or-resume-context
+              (get (ex-data err-or-resume-context) ::context))]
 
-  ([app-ctx
-    a-frame-router
-    error-handler
-    suppressed-error-handler
-    err-or-resume-context]
-   (let [ctx (if (map? err-or-resume-context)
-               err-or-resume-context
-               (get (ex-data err-or-resume-context) ::context))]
+    (when (nil? ctx)
+      (throw
+       (ex-info
+        "no resume context in ex-data"
+        {:err-or-resume-context err-or-resume-context})))
 
-     (when (nil? ctx)
-       (throw
-        (ex-info
-         "no resume context in ex-data"
-         {:err-or-resume-context err-or-resume-context})))
-
-     (execute*
-      error-handler
-      suppressed-error-handler
-      (assoc-opaque-keys ctx app-ctx a-frame-router)))))
+    (execute*
+     (assoc-opaque-keys ctx app-ctx a-frame-router))))

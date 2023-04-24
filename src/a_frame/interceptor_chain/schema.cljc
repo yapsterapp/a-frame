@@ -72,9 +72,14 @@
 
 (def InterceptorContext
   [:map
-   [af.schema/a-frame-app-ctx :any]
-   [af.schema/a-frame-router :any]
+   ;; queue of InterceptorSpecs to ::enter
    [::intc/queue [:vector InterceptorSpec]]
+   ;; stack of InterceptorSpecs to ::leave
    [::intc/stack [:sequential InterceptorSpec]]
+   ;; history of executed functions
    [::intc/history [:vector InterceptorHistoryElem]]
-   [::intc/errors {:optional true} :any]])
+   ;; any active error
+   [::intc/error {:optional true} :any]
+
+   [af.schema/a-frame-app-ctx :any]
+   [af.schema/a-frame-router :any]])
