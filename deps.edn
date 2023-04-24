@@ -32,7 +32,7 @@
                 refactor-nrepl/refactor-nrepl {:mvn/version "3.6.0"}
                 cider/cider-nrepl {:mvn/version "0.29.0"}}}
 
-  :local-prpr
+  :local-deps
   {:extra-deps
    {com.github.yapsterapp/promisespromises {:local/root "../promisespromises"}}}
 

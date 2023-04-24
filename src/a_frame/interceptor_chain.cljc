@@ -8,10 +8,11 @@
    [taoensso.timbre :refer [warn error]]
    [a-frame.schema :as af.schema]
    [a-frame.registry :as registry]
+   [a-frame.interceptor-chain.schema :as intc.schema]
    [a-frame.interceptor-chain.data :as data]
    [a-frame.interceptor-chain.data.tag-readers]))
 
-;; a slightly more data-driven interceptor chain for a-frame
+;; a more data-driven interceptor chain for a-frame
 ;;
 ;; the idea being that the interceptor context should be serializable,
 ;; and when there is an error the complete interceptor context
@@ -25,81 +26,7 @@
 ;; kinds of handlers. it doesn't necessarily make sense for a general purpose
 ;; interceptor chain, which remains at promisespromises.interceptor-chain
 
-(def Interceptor
-  "An Interceptor, all methods are optional but should be implemented as
-  follows:
 
-  * `::enter` takes 1 or 2 args:
-     - context -> context
-     - context -> data -> context
-
-  * `::leave` – takes 1 or 2 args:
-     - context -> context
-     - context -> data -> context
-
-  * `::error` – takes two args
-     - context -> error -> context
-
-  All methods may return either promises or plain values."
-
-  [:map
-   [::name {:optional true} :keyword]
-   [::enter {:optional true} fn?]
-   [::leave {:optional true} fn?]
-   [::error {:optional true} fn?]])
-
-(def InterceptorSpec
-  "the interceptor chain is created with a list of InterceptorSpecs. each
-   InterceptorSpec is either
-   -  simple keyword, referencing a registered interceptor which will cause
-      ::enter and ::leave fns to be invoked with 1-arity, or
-   - a map with mandatory `::key`. if there is data
-      (either `::enter-data` or `::leave-data`) then `::enter` and `::leave` will
-      be invoked with their 2-arity
-
-   providing data like this allows a pure-data (in the re-frame sense - roughly
-   something which has no opaque objects and is serializable/deserializable)
-   interceptor chain to be registered, which has numerous benefits"
-
-  [:or
-
-   :keyword
-
-   [:map
-    [::key :keyword]
-    [::enter-data {:optional true} :any]
-    [::leave-data {:optional true} :any]]])
-
-(def InterceptorList
-  [:sequential InterceptorSpec])
-
-(def interceptor-fn-keys
-  [::enter ::leave ::error])
-
-(def InterceptorFnKey
-  (into [:enum] interceptor-fn-keys))
-
-(def interceptor-fn-noop
-  ::noop)
-
-(def InterceptorFnHistoryKey
-  (conj InterceptorFnKey interceptor-fn-noop))
-
-(def InterceptorHistoryElem
-  [:or
-
-   [:tuple InterceptorSpec InterceptorFnHistoryKey]
-
-   [:tuple InterceptorSpec InterceptorFnHistoryKey :any]])
-
-(def InterceptorContext
-  [:map
-   [af.schema/a-frame-app-ctx :any]
-   [af.schema/a-frame-router :any]
-   [::queue [:vector InterceptorSpec]]
-   [::stack [:sequential InterceptorSpec]]
-   [::history [:vector InterceptorHistoryElem]]
-   [::errors {:optional true} :any]])
 
 ;; utility fns
 
@@ -110,7 +37,7 @@
 
 (def context-keys
   "The Interceptor specific keys that are added to contexts"
-  (->> InterceptorContext
+  (->> intc.schema/InterceptorContext
        (mu/keys)
        (filter keyword?)
        set))
@@ -178,12 +105,12 @@
      ::history []})))
 
 (mx/defn ^:always-validate initiate
-  :- InterceptorContext
+  :- intc.schema/InterceptorContext
   "Given a sequence of [[InterceptorSpec]]s and a map of `initial-context` values,
   returns a new [[InterceptorContext]] ready to [[execute]]"
   [app-ctx
    a-frame-router
-   interceptor-chain :- InterceptorList
+   interceptor-chain :- intc.schema/InterceptorList
    initial-context]
 
   (->
@@ -194,27 +121,27 @@
    (assoc-opaque-keys app-ctx a-frame-router)))
 
 (mx/defn ^:always-validate enqueue
-  :- InterceptorContext
+  :- intc.schema/InterceptorContext
   "Adds `interceptors` to the end of the interceptor queue within `context`"
-  [context :- InterceptorContext
-   interceptors :- InterceptorList]
+  [context :- intc.schema/InterceptorContext
+   interceptors :- intc.schema/InterceptorList]
   (update context ::queue into interceptors))
 
 (mx/defn ^:always-validate terminate
-  :- InterceptorContext
+  :- intc.schema/InterceptorContext
   "Removes all queued interceptors from `context`"
-  [context :- InterceptorContext]
+  [context :- intc.schema/InterceptorContext]
   (assoc context ::queue []))
 
 (mx/defn ^:always-validate clear-errors
-  :- InterceptorContext
+  :- intc.schema/InterceptorContext
   "Removes any associated `::errors` from `context`"
-  [context :- InterceptorContext]
+  [context :- intc.schema/InterceptorContext]
   (dissoc context ::errors))
 
 (mx/defn ^:always-validate register-interceptor
   [interceptor-key :- :keyword
-   interceptor :- Interceptor]
+   interceptor :- intc.schema/Interceptor]
   (registry/register-handler ::interceptor interceptor-key interceptor))
 
 (defn resolve-interceptor
@@ -363,7 +290,7 @@
   [{queue ::queue
     stack ::stack
     _history ::history
-    :as context} :- InterceptorContext]
+    :as context} :- intc.schema/InterceptorContext]
 
   (if (empty? queue)
     [::break context]
@@ -397,7 +324,7 @@
 
   If an error is raised it is captured, stored in the `context`s `:error` key,
   and the queue is cleared (to prevent further processing.)"
-  [context :- InterceptorContext]
+  [context :- intc.schema/InterceptorContext]
   (pr-loop-context context enter-next))
 
 (mx/defn leave-next
@@ -407,7 +334,7 @@
   [{stack ::stack
     _history ::history
     [error :as _errors] ::errors
-    :as context} :- InterceptorContext]
+    :as context} :- intc.schema/InterceptorContext]
 
   (if (empty? stack)
     [::break context]
@@ -446,7 +373,7 @@
 
   Any thrown errors will replace the current `::error` with stack unwinding
   continuing from that point forwards."
-  [context :- InterceptorContext]
+  [context :- intc.schema/InterceptorContext]
   (pr-loop-context context leave-next))
 
 ;; the main interaction fn
@@ -463,7 +390,7 @@
     (warn e)))
 
 (mx/defn execute*
-  ([context :- InterceptorContext]
+  ([context :- intc.schema/InterceptorContext]
    (execute*
     default-error-handler
     default-suppressed-error-handler
@@ -471,7 +398,7 @@
 
   ([error-handler
     suppressed-error-handler
-    context :- InterceptorContext]
+    context :- intc.schema/InterceptorContext]
 
    (pr/chain
     (enter-all context)
@@ -506,7 +433,7 @@
   will be re-thrown when the execution promise is realised. "
   ([app-ctx
     a-frame-router
-    interceptor-chain :- InterceptorList
+    interceptor-chain :- intc.schema/InterceptorList
     initial-context]
    (->> (initiate app-ctx
                   a-frame-router
