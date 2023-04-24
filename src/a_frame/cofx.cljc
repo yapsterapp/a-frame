@@ -17,16 +17,12 @@
    interceptor chain"
   ([id]
    {::interceptor-chain/key ::inject-cofx
-
-    ::interceptor-chain/data
-    {::interceptor-chain/enter-data {::id id}}})
+    ::interceptor-chain/enter-data {::id id}})
 
   ([id arg-spec]
    {::interceptor-chain/key ::inject-cofx
-
-    ::interceptor-chain/data
-    {::interceptor-chain/enter-data {::id id
-                                     ::arg arg-spec}}}))
+    ::interceptor-chain/enter-data {::id id
+                                    ::arg arg-spec}}))
 
 ;; interceptor
 

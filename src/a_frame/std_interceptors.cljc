@@ -11,9 +11,7 @@
 (defn fx-handler->interceptor
   [pure-handler-key]
   {::interceptor-chain/key ::fx-event-handler
-
-   ::interceptor-chain/data
-   {::interceptor-chain/enter-data pure-handler-key}})
+   ::interceptor-chain/enter-data pure-handler-key})
 
 (def fx-event-handler-interceptor
   {::interceptor-chain/name ::fx-event-handler
@@ -41,9 +39,7 @@
 (defn ctx-handler->interceptor
   [pure-handler-key]
   {::interceptor-chain/key ::ctx-event-handler
-
-   ::interceptor-chain/data
-   {::interceptor-chain/enter-data pure-handler-key}})
+   ::interceptor-chain/enter-data pure-handler-key})
 
 (def ctx-event-handler-interceptor
   {::interceptor-chain/name ::ctx-event-handler
@@ -79,7 +75,7 @@
 (defn interceptor->remove-leave-error
   [interceptor-spec]
   {::interceptor-chain/key ::remove-leave-error-proxy
-   ::interceptor-chain/data {::interceptor-chain/enter-data interceptor-spec}})
+   ::interceptor-chain/enter-data interceptor-spec})
 
 (def remove-leave-error-proxy-interceptor
   "a proxy interceptor which removes ::leave and ::error
@@ -218,6 +214,4 @@
    be logged in a-frame error reports"
   [log-context-data-spec]
   {::interceptor-chain/key ::set-log-context
-
-   ::interceptor-chain/data
-   {::interceptor-chain/enter-data log-context-data-spec}})
+   ::interceptor-chain/enter-data log-context-data-spec})
