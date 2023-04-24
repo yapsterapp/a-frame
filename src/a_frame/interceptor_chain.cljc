@@ -168,8 +168,7 @@
   [resume-context e]
   (ex-info
    "interceptor failed"
-   {::context (sanitise-context resume-context)
-    ::interceptor-fn-key ::enter}
+   {::context (sanitise-context resume-context)}
    e))
 
 (defn unwrap-original-error
