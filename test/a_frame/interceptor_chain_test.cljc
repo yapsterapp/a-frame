@@ -61,8 +61,8 @@
 
   (pr/let
       [intc-with-data {::sut/key ::execute-single-interceptor-with-data-test
-                       ::sut/data {::sut/enter-data #a-frame.ctx/path [::foo]
-                                   ::sut/leave-data #a-frame.ctx/path [::bar]}}
+                       ::sut/enter-data #a-frame.ctx/path [::foo]
+                       ::sut/leave-data #a-frame.ctx/path [::bar]}
        chain [intc-with-data]
        input {:test (rand-int 9999)
               ::foo "foofoo"

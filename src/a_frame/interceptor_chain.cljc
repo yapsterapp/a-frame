@@ -53,8 +53,8 @@
    InterceptorSpec is either
    -  simple keyword, referencing a registered interceptor which will cause
       ::enter and ::leave fns to be invoked with 1-arity, or
-   - a pair of [interceptor-kw interceptor-data]. if there is data
-      (either ::enter-data or ::leave-data) then ::enter and ::leave will
+   - a map with mandatory `::key`. if there is data
+      (either `::enter-data` or `::leave-data`) then `::enter` and `::leave` will
       be invoked with their 2-arity
 
    providing data like this allows a pure-data (in the re-frame sense - roughly
@@ -67,9 +67,8 @@
 
    [:map
     [::key :keyword]
-    [::data [:map
-             [::enter-data {:optional true} :any]
-             [::leave-data {:optional true} :any]]]]])
+    [::enter-data {:optional true} :any]
+    [::leave-data {:optional true} :any]]])
 
 (def InterceptorList
   [:sequential InterceptorSpec])
@@ -148,7 +147,9 @@
 
          (= ::break t) c
 
-         :else (pr/recur c))))))
+         :else
+         #_{:clj-kondo/ignore [:invalid-arity]}
+         (pr/recur c))))))
 
 (defn pr-loop-context
   [context step-fn]
@@ -164,6 +165,17 @@
    ctx
    {af.schema/a-frame-app-ctx app-ctx
     af.schema/a-frame-router a-frame-router}))
+
+(defn initiate*
+  ([interceptor-chain] (initiate* {} interceptor-chain))
+  ([initial-context
+    interceptor-chain]
+
+   (merge
+    initial-context
+    {::queue (vec interceptor-chain)
+     ::stack '()
+     ::history []})))
 
 (mx/defn ^:always-validate initiate
   :- InterceptorContext
@@ -254,7 +266,7 @@
     - [data-val] if there was data specified
     - nil if no data was specified"
   [interceptor-fn-key
-   interceptor-data-specs
+   interceptor-spec
    context]
 
   (condp contains? interceptor-fn-key
@@ -262,8 +274,8 @@
     #{::enter ::leave}
     (let [data-key (interceptor-data-key interceptor-fn-key)]
 
-      (when (contains? interceptor-data-specs data-key)
-        (let [spec (get interceptor-data-specs data-key)
+      (when (contains? interceptor-spec data-key)
+        (let [spec (get interceptor-spec data-key)
               data (data/resolve-data spec context)]
           ;; (warn "resolve-interceptor-data" spec data)
           [data])))
@@ -279,8 +291,8 @@
    error]
 
   (let [{interceptor-kw ::key
-         interceptor-data-specs ::data} (normalize-interceptor-spec
-                                         interceptor-spec)
+         :as norm-interceptor-spec} (normalize-interceptor-spec
+                                     interceptor-spec)
 
         interceptor (resolve-interceptor interceptor-kw)]
 
@@ -291,7 +303,7 @@
         #{::enter ::leave}
         (let [[data-val :as data] (resolve-interceptor-data
                                    interceptor-fn-key
-                                   interceptor-data-specs
+                                   norm-interceptor-spec
                                    context)
 
               thunk (if (some? data)
@@ -304,8 +316,7 @@
            thunk])
 
         #{::error}
-        [[interceptor-spec
-          interceptor-fn-key]
+        [[interceptor-spec interceptor-fn-key]
          (fn [ctx] (f ctx error))])
 
       ;; no interceptor fn, so no thunk
