@@ -207,13 +207,24 @@
                          ::sut/leave (fn [x] (assoc x :left :early))}]
 
                        [::execute-stack-alteration-test-alteration
-                        {::sut/leave (fn [x]
-                                       (prpr/always
-                                        (update
-                                         x
-                                         ::sut/stack
-                                         conj
-                                         ::execute-stack-alteration-test-late-arrival)))}]]]
+                        {::sut/leave
+                         (fn [{[hd & rst :as _stack] ::sut/stack
+                               :as x}]
+                           (prpr/always
+                            (assoc
+                             x
+                             ::sut/stack
+
+                             ;; add the new interceptor at second position
+                             ;; in the stack list - the current interceptor
+                             ;; will be at first position and will be
+                             ;; removed after it has run
+                             (apply
+                              list
+                              hd
+                              ::execute-stack-alteration-test-late-arrival
+                              rst)
+                             )))}]]]
     (sut/register-interceptor key inter))
 
   (pr/let
@@ -228,7 +239,8 @@
              [[::execute-stack-alteration-test-alteration ::sut/noop ::sut/enter]
               [::execute-stack-alteration-test-alteration ::sut/leave]
               [::execute-stack-alteration-test-late-arrival ::sut/leave]]})
-           r))))
+           r)))
+  )
 
 (deftest execute-error-handling-test
   (tlet [suppressed-errors (atom [])

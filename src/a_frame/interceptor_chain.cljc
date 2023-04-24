@@ -284,11 +284,24 @@
 
 ;; processing fns
 
+(defn after-enter-update-context
+  "update a context after the enter fn has been processed"
+  [{queue ::queue
+    stack ::stack
+    _history ::history
+    :as context}
+   interceptor-spec
+   history]
+  (-> context
+      (assoc ::queue (vec (rest queue)))
+      (assoc ::stack (conj stack interceptor-spec))
+      (update ::history conj history)))
+
 (mx/defn enter-next
   "Executes the next `::enter` interceptor queued within `context`, returning a
   promise that will resolve to the next [[pr-loop-context]] action to take"
   [{queue ::queue
-    stack ::stack
+    _stack ::stack
     _history ::history
     :as context} :- intc.schema/InterceptorContext]
 
@@ -301,17 +314,28 @@
                            ::enter
                            interceptor-spec
                            context
-                           nil)
+                           nil)]
 
-          new-context (-> context
-                          (assoc ::queue (vec (rest queue)))
-                          (assoc ::stack (conj stack interceptor-spec))
-                          (update ::history conj history))]
+      (-> (maybe-execute-interceptor-fn-thunk thunk context)
 
-      (-> (maybe-execute-interceptor-fn-thunk thunk new-context)
+          ;; don't move the interceptor-spec from queue->stack
+          ;; until after the fn has executed - so the
+          ;; interceptor-spec is visible at the head of the queue
+          ;; for the fn to inspect
+          (pr/chain
+           (fn [ctx]
+             (after-enter-update-context
+              ctx
+              interceptor-spec
+              history)))
 
           (prpr/catch-always
-           (partial wrap-interceptor-error context new-context))
+           (partial wrap-interceptor-error
+                    context
+                    (after-enter-update-context
+                     context
+                     interceptor-spec
+                     history)))
 
           (pr/chain
            (fn [{queue ::queue :as c}]
@@ -326,6 +350,18 @@
   and the queue is cleared (to prevent further processing.)"
   [context :- intc.schema/InterceptorContext]
   (pr-loop-context context enter-next))
+
+(defn after-leave-update-context
+  "update a context after a leave fn has been processed"
+  [{stack ::stack
+    _history ::history
+    [_error :as _errors] ::errors
+    :as context}
+   _interceptor-spec
+   history]
+  (-> context
+      (assoc ::stack (pop stack))
+      (update ::history conj history)))
 
 (mx/defn leave-next
   "Executes the next `::leave` or `::error` interceptor on the stack within
@@ -347,16 +383,28 @@
                            interceptor-fn-key
                            interceptor-spec
                            context
-                           error)
+                           error)]
 
-          new-context (-> context
-                          (assoc ::stack (pop stack))
-                          (update ::history conj history))]
+      (-> (maybe-execute-interceptor-fn-thunk thunk context)
 
-      (-> (maybe-execute-interceptor-fn-thunk thunk new-context)
+          ;; don't pop the interceptor-spec from the stack
+          ;; until the fn has been executed - so that the
+          ;; fn can introspect the interceptor-spec from
+          ;; the top of the stack
+          (pr/chain
+           (fn [ctx]
+             (after-leave-update-context
+              ctx
+              interceptor-spec
+              history)))
 
           (prpr/catch-always
-           (partial wrap-interceptor-error context new-context))
+           (partial wrap-interceptor-error
+                    context
+                    (after-leave-update-context
+                     context
+                     interceptor-spec
+                     history)))
 
           (pr/chain
            (fn [{stack ::stack :as c}]
