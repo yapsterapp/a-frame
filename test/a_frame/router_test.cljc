@@ -300,8 +300,9 @@
                               (interceptor-chain/unwrap-original-error)))]
             (is (= (str ::boo) (ex-message org-err)))
             (is (= {:error/type ::boo
-                    ::blah 55} (ex-data org-err)))))))
+                    ::blah 55} (ex-data org-err))))))))
 
+  (with-log-level :fatal
     (testing "propagates an event-processing failure with catch? false"
       (let [router (sut/create-router test-app-ctx {})
             _ (events/reg-event-fx
@@ -328,7 +329,8 @@
 
             (is (= (str ::boo) (ex-message org-err)))
             (is (= {:error/type ::boo
-                    ::blah 55} (ex-data org-err)))))))))
+                    ::blah 55} (ex-data org-err))))))))
+  )
 
 (deftest handle-event-stream-test
   (testing "handles a stream of successful events"

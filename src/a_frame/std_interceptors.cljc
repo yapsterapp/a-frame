@@ -151,7 +151,7 @@
 
    ::interceptor-chain/error
    (fn [context
-       err]
+        err]
      (let [org-err (interceptor-chain/unwrap-original-error err)]
 
        (af.log/error
@@ -159,8 +159,8 @@
         org-err
         (error-context-report err)))
 
-     ;; don't alter the context at all, we're just reporting
-     context)})
+     ;; pass the error on - we're just reporting
+     (throw err))})
 
 (interceptor-chain/register-interceptor
  ::unhandled-error-report
