@@ -26,8 +26,6 @@
 ;; kinds of handlers. it doesn't necessarily make sense for a general purpose
 ;; interceptor chain, which remains at promisespromises.interceptor-chain
 
-
-
 ;; utility fns
 
 (def opaque-context-keys
@@ -270,17 +268,39 @@
                    error)]
     (maybe-execute-interceptor-fn-thunk thunk context)))
 
-(defn wrap-interceptor-error
+(defn rethrow
+  "wrap an error in a marker exception for rethrowing rather
+   than wrapping - allows an ::error fn to rethrow an error
+   without confusing resume"
+  [e]
+  (ex-info
+   "rethrowing"
+   {::rethrow e}))
+
+(defn rethrow?
+  "returns an error to rethrow or nil"
+  [o]
+  (let [{rethrow ::rethrow} (ex-data o)]
+    rethrow))
+
+(defn record-interceptor-error
   "wrap an exception and record the error"
   [resume-context
-   new-context
+   next-context
    e]
-  (-> new-context
-      terminate
-      ;; add an error referencing the context,
-      ;; which can be used to resume at the
-      ;; point of failure
-      (assoc ::error (wrap-error resume-context e))))
+  (let [rethrow (rethrow? e)]
+
+    (-> next-context
+        terminate
+        (assoc
+         ::error
+         (if (some? rethrow)
+           rethrow
+
+           ;; add an error referencing the context,
+           ;; which can be used to resume at the
+           ;; point of failure
+           (wrap-error resume-context e))))))
 
 ;; processing fns
 
@@ -291,11 +311,11 @@
     _history ::history
     :as context}
    interceptor-spec
-   new-history]
+   history-entry]
   (-> context
       (assoc ::queue (vec (rest queue)))
       (assoc ::stack (conj stack interceptor-spec))
-      (update ::history conj new-history)))
+      (update ::history conj history-entry)))
 
 (mx/defn enter-next
   "Executes the next `::enter` interceptor queued within `context`, returning a
@@ -310,11 +330,11 @@
 
     (let [interceptor-spec (first queue)
 
-          [new-history thunk] (interceptor-fn-history-thunk
-                               ::enter
-                               interceptor-spec
-                               context
-                               nil)]
+          [history-entry thunk] (interceptor-fn-history-thunk
+                                 ::enter
+                                 interceptor-spec
+                                 context
+                                 nil)]
 
       (-> (maybe-execute-interceptor-fn-thunk thunk context)
 
@@ -327,15 +347,15 @@
              (after-enter-update-context
               ctx
               interceptor-spec
-              new-history)))
+              history-entry)))
 
           (prpr/catch-always
-           (partial wrap-interceptor-error
+           (partial record-interceptor-error
                     context
                     (after-enter-update-context
                      context
                      interceptor-spec
-                     new-history)))
+                     history-entry)))
 
           (pr/chain
            (fn [{queue ::queue :as c}]
@@ -360,25 +380,31 @@
    interceptor-fn-key
    has-thunk?
    _interceptor-spec
-   new-history]
+   history-entry]
   (condp = interceptor-fn-key
     ::leave ;; normal leave fn
     (-> context
         (assoc ::stack (pop stack))
-        (update ::history conj new-history))
+        (update ::history conj history-entry))
 
-    ::error
+    ::error ;; successful error handler
     (cond-> context
       true (assoc ::stack (pop stack))
-      true (update ::history conj new-history)
+      true (update ::history conj history-entry)
       ;; only clear the error if there was a thunk which
       ;; executed normally
       has-thunk? (dissoc ::error))
 
-    ::catch ;; failure of a leave or error handler
+    ::catch-leave ;; catch during leave fn
     (-> context
+        ;; don't pop the stack - give a chance to handle
+        (update ::history conj history-entry))
+
+    ::catch-error ;; catch during error fn
+    (-> context
+        ;; pop the stack - had a chance to handle
         (assoc ::stack (pop stack))
-        (update ::history conj new-history))))
+        (update ::history conj history-entry))))
 
 (mx/defn leave-next
   "Executes the next `::leave` or `::error` interceptor on the stack within
@@ -420,11 +446,13 @@
               new-history)))
 
           (prpr/catch-always
-           (partial wrap-interceptor-error
+           (partial record-interceptor-error
                     context
                     (after-leave-update-context
                      context
-                     ::catch
+                     (if (= ::leave interceptor-fn-key)
+                       ::catch-leave
+                       ::catch-error)
                      false
                      interceptor-spec
                      new-history)))
@@ -450,6 +478,7 @@
 ;; the main interaction fn
 
 (defn final-error-handler
+  "if there is still an error after processing, throw it"
   [{err ::error
     :as ctx}]
   (if (some? err)
