@@ -45,8 +45,8 @@
             input
             {:entered? true
              :left? true}
-            {::sut/history [[::execute-single-interceptor-test ::sut/enter]
-                            [::execute-single-interceptor-test ::sut/leave]]})
+            {::sut/history [[::execute-single-interceptor-test ::sut/enter :_ ::sut/execute ::sut/success]
+                            [::execute-single-interceptor-test ::sut/leave :_ ::sut/execute ::sut/success]]})
            r))))
 
 (deftest execute-single-interceptor-with-data-test
@@ -73,8 +73,8 @@
             input
             {:entered? true
              :left? true}
-            {::sut/history [[intc-with-data ::sut/enter "foofoo"]
-                            [intc-with-data ::sut/leave "barbar"]]})
+            {::sut/history [[intc-with-data ::sut/enter "foofoo" ::sut/execute ::sut/success]
+                            [intc-with-data ::sut/leave "barbar" ::sut/execute ::sut/success]]})
            r))))
 
 (deftest execute-multiple-interceptors-test
@@ -121,14 +121,14 @@
                 input
                 {:states [{:test (* t 2) :test2 t}]}
                 {::sut/history
-                 [[::execute-multiple-interceptors-test-A ::sut/enter]
-                  [::execute-multiple-interceptors-test-B ::sut/enter]
-                  [::execute-multiple-interceptors-test-C ::sut/enter]
-                  [::execute-multiple-interceptors-test-D ::sut/noop ::sut/enter]
-                  [::execute-multiple-interceptors-test-D ::sut/leave]
-                  [::execute-multiple-interceptors-test-C ::sut/noop ::sut/leave]
-                  [::execute-multiple-interceptors-test-B ::sut/noop ::sut/leave]
-                  [::execute-multiple-interceptors-test-A ::sut/leave]]})
+                 [[::execute-multiple-interceptors-test-A ::sut/enter :_ ::sut/execute ::sut/success]
+                  [::execute-multiple-interceptors-test-B ::sut/enter :_ ::sut/execute ::sut/success]
+                  [::execute-multiple-interceptors-test-C ::sut/enter :_ ::sut/execute ::sut/success]
+                  [::execute-multiple-interceptors-test-D ::sut/enter :_ ::sut/noop ::sut/success]
+                  [::execute-multiple-interceptors-test-D ::sut/leave :_ ::sut/execute ::sut/success]
+                  [::execute-multiple-interceptors-test-C ::sut/leave :_ ::sut/noop ::sut/success]
+                  [::execute-multiple-interceptors-test-B ::sut/leave :_ ::sut/noop ::sut/success]
+                  [::execute-multiple-interceptors-test-A ::sut/leave :_ ::sut/execute ::sut/success]]})
                (dissoc r :leaving-at)))
         (is (<= epoch-before (:leaving-at r) epoch-after)))))
 
@@ -163,12 +163,12 @@
            :ddo true
 
            ::sut/history
-           [[::execute-promise-based-interceptors-test-A ::sut/enter]
-            [::execute-promise-based-interceptors-test-B ::sut/noop ::sut/enter]
-            [::execute-promise-based-interceptors-test-C ::sut/enter]
-            [::execute-promise-based-interceptors-test-C ::sut/noop ::sut/leave]
-            [::execute-promise-based-interceptors-test-B ::sut/leave]
-            [::execute-promise-based-interceptors-test-A ::sut/noop ::sut/leave]]})
+           [[::execute-promise-based-interceptors-test-A ::sut/enter :_ ::sut/execute ::sut/success]
+            [::execute-promise-based-interceptors-test-B ::sut/enter :_ ::sut/noop ::sut/success]
+            [::execute-promise-based-interceptors-test-C ::sut/enter :_ ::sut/execute ::sut/success]
+            [::execute-promise-based-interceptors-test-C ::sut/leave :_ ::sut/noop ::sut/success]
+            [::execute-promise-based-interceptors-test-B ::sut/leave :_ ::sut/execute ::sut/success]
+            [::execute-promise-based-interceptors-test-A ::sut/leave :_ ::sut/noop ::sut/success]]})
          r))))
 
 (deftest execute-queue-alteration-test
@@ -195,10 +195,10 @@
              :left :early
 
              ::sut/history
-             [[::execute-queue-alteration-test-alteration ::sut/enter]
-              [::execute-queue-alteration-test-late-arrival ::sut/enter]
-              [::execute-queue-alteration-test-late-arrival ::sut/leave]
-              [::execute-queue-alteration-test-alteration ::sut/noop ::sut/leave]]})
+             [[::execute-queue-alteration-test-alteration ::sut/enter :_ ::sut/execute ::sut/success]
+              [::execute-queue-alteration-test-late-arrival ::sut/enter :_ ::sut/execute ::sut/success]
+              [::execute-queue-alteration-test-late-arrival ::sut/leave :_ ::sut/execute ::sut/success]
+              [::execute-queue-alteration-test-alteration ::sut/leave :_ ::sut/noop ::sut/success]]})
            r))))
 
 (deftest execute-stack-alteration-test
@@ -236,9 +236,9 @@
             {:left :early
 
              ::sut/history
-             [[::execute-stack-alteration-test-alteration ::sut/noop ::sut/enter]
-              [::execute-stack-alteration-test-alteration ::sut/leave]
-              [::execute-stack-alteration-test-late-arrival ::sut/leave]]})
+             [[::execute-stack-alteration-test-alteration ::sut/enter :_ ::sut/noop ::sut/success]
+              [::execute-stack-alteration-test-alteration ::sut/leave :_ ::sut/execute ::sut/success]
+              [::execute-stack-alteration-test-late-arrival ::sut/leave :_ ::sut/execute ::sut/success]]})
            r)))
   )
 
@@ -370,10 +370,10 @@
             (is (= (merge
                     empty-interceptor-context
                     {::sut/history
-                     [[::execute-error-handline-not-cleared-clear ::sut/noop ::sut/enter]
-                      [::execute-error-handling-not-cleared-boom ::sut/enter]
-                      [::execute-error-handling-not-cleared-boom ::sut/noop ::sut/error]
-                      [::execute-error-handline-not-cleared-clear ::sut/error]]})
+                     [[::execute-error-handline-not-cleared-clear ::sut/enter :_ ::sut/noop ::sut/success]
+                      [::execute-error-handling-not-cleared-boom ::sut/enter :_ ::sut/execute ::sut/error]
+                      [::execute-error-handling-not-cleared-boom ::sut/error :_ ::sut/noop ::sut/success]
+                      [::execute-error-handline-not-cleared-clear ::sut/error :_ ::sut/execute ::sut/success]]})
                    r))))))
 
 (deftest resume-test

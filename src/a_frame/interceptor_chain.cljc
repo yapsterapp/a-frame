@@ -208,7 +208,10 @@
     nil))
 
 (defn interceptor-fn-history-thunk
-  "returns a [<history-entry> <interceptor-fn-thunk>]"
+  "returns a [<history-entry> <interceptor-fn-thunk>]
+
+  [interceptor-spec interceptor-fn-key ]
+  "
   [interceptor-fn-key
    interceptor-spec
    context
@@ -235,16 +238,16 @@
                       (fn [ctx] (f ctx)))]
 
           [(if (some? data)
-             [interceptor-spec interceptor-fn-key data-val]
-             [interceptor-spec interceptor-fn-key])
+             [interceptor-spec interceptor-fn-key data-val ::execute]
+             [interceptor-spec interceptor-fn-key :_ ::execute])
            thunk])
 
         #{::error}
-        [[interceptor-spec interceptor-fn-key]
+        [[interceptor-spec interceptor-fn-key :_ ::execute]
          (fn [ctx] (f ctx error))])
 
       ;; no interceptor fn, so no thunk
-      [[interceptor-kw ::noop interceptor-fn-key]])))
+      [[interceptor-spec interceptor-fn-key :_ ::noop]])))
 
 (defn maybe-execute-interceptor-fn-thunk
   [thunk
@@ -346,7 +349,7 @@
              (after-enter-update-context
               ctx
               interceptor-spec
-              history-entry)))
+              (conj history-entry ::success))))
 
           (prpr/catch-always
            (partial record-interceptor-error
@@ -354,7 +357,7 @@
                     (after-enter-update-context
                      context
                      interceptor-spec
-                     history-entry)))
+                     (conj history-entry ::error))))
 
           (pr/chain
            (fn [{queue ::queue :as c}]
@@ -421,7 +424,7 @@
 
           interceptor-fn-key (if (some? error) ::error ::leave)
 
-          [new-history thunk] (interceptor-fn-history-thunk
+          [history-entry thunk] (interceptor-fn-history-thunk
                                interceptor-fn-key
                                interceptor-spec
                                context
@@ -442,7 +445,7 @@
               interceptor-fn-key
               has-thunk?
               interceptor-spec
-              new-history)))
+              (conj history-entry ::success))))
 
           (prpr/catch-always
            (partial record-interceptor-error
@@ -454,7 +457,7 @@
                        ::catch-error)
                      false
                      interceptor-spec
-                     new-history)))
+                     (conj history-entry ::error))))
 
           (pr/chain
            (fn [{stack ::stack :as c}]
