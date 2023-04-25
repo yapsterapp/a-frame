@@ -88,7 +88,7 @@
 
    ::interceptor-chain/enter
    (fn [context
-       interceptor-spec]
+        interceptor-spec]
 
      (interceptor-chain/maybe-execute-interceptor-fn
       ::interceptor-chain/enter

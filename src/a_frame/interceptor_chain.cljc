@@ -185,6 +185,16 @@
 
       e)))
 
+(defn interceptor-fn-requires-data?
+  [interceptor-fn-key
+   interceptor-spec]
+
+  (if (#{::enter ::leave} interceptor-fn-key)
+    (let [data-key (interceptor-data-key interceptor-fn-key)]
+      (contains? interceptor-spec data-key))
+
+    false))
+
 (defn resolve-interceptor-data
   "resolve the interceptor data, returning either
     - [data-val] if there was data specified
@@ -210,8 +220,16 @@
 (defn interceptor-fn-history-thunk
   "returns a [<history-entry> <interceptor-fn-thunk>]
 
-  [interceptor-spec interceptor-fn-key ]
-  "
+  <history-entry> :-
+    [<interceptor-spec>
+     <interceptor-fn-key>
+     <operation> :- ::execute | ::noop
+     <data>
+     <outcome> :- ::success | ::error]
+
+  the <data> and <outcome> fields in the <history-entry> tuple
+  will be added later. the <interceptor-fn-thunk> returns
+  [<data> <next-context>] when it completes normally"
   [interceptor-fn-key
    interceptor-spec
    context
@@ -227,34 +245,47 @@
 
       (condp contains? interceptor-fn-key
 
+        ;; we have to resolve the data within the thunk,
+        ;; because doing so may throw errors, which should
+        ;; be recorded and dealt with by the normal
+        ;; interceptor chain mechanism
         #{::enter ::leave}
-        (let [[data-val :as data] (resolve-interceptor-data
-                                   interceptor-fn-key
-                                   norm-interceptor-spec
-                                   context)
+        (let [thunk (if (interceptor-fn-requires-data?
+                         interceptor-fn-key
+                         norm-interceptor-spec)
 
-              thunk (if (some? data)
-                      (fn [ctx] (f ctx data-val))
-                      (fn [ctx] (f ctx)))]
+                      (fn [ctx]
+                        (pr/let [[data-val] (resolve-interceptor-data
+                                             interceptor-fn-key
+                                             norm-interceptor-spec
+                                             context)
+                                 next-ctx (f ctx data-val)]
 
-          [(if (some? data)
-             [interceptor-spec interceptor-fn-key data-val ::execute]
-             [interceptor-spec interceptor-fn-key :_ ::execute])
+                          [data-val next-ctx]))
+
+                      (fn [ctx]
+                        (pr/let [next-ctx (f ctx)]
+                          [:_ next-ctx])))]
+
+          [[interceptor-spec interceptor-fn-key ::execute]
            thunk])
 
         #{::error}
-        [[interceptor-spec interceptor-fn-key :_ ::execute]
-         (fn [ctx] (f ctx error))])
+        [[interceptor-spec interceptor-fn-key ::execute]
+         (fn [ctx]
+           (pr/let [next-ctx (f ctx error)]
+             [:_ next-ctx]))])
 
       ;; no interceptor fn, so no thunk
-      [[interceptor-spec interceptor-fn-key :_ ::noop]])))
+      [[interceptor-spec interceptor-fn-key ::noop]
+       nil])))
 
 (defn maybe-execute-interceptor-fn-thunk
   [thunk
    context]
   (if (some? thunk)
     (thunk context)
-    context))
+    [:_ context]))
 
 (defn maybe-execute-interceptor-fn
   "call an interceptor fn on an interceptor, resolving
@@ -263,12 +294,14 @@
    interceptor-spec
    context
    error]
-  (let [[_ thunk] (interceptor-fn-history-thunk
-                   interceptor-fn-key
-                   interceptor-spec
-                   context
-                   error)]
-    (maybe-execute-interceptor-fn-thunk thunk context)))
+  (pr/let [[_ thunk] (interceptor-fn-history-thunk
+                      interceptor-fn-key
+                      interceptor-spec
+                      context
+                      error)
+           [_data-val next-ctx] (maybe-execute-interceptor-fn-thunk thunk context)]
+
+    next-ctx))
 
 (defn rethrow
   "wrap an error in a marker exception for rethrowing rather
@@ -321,7 +354,9 @@
 
 (mx/defn enter-next
   "Executes the next `::enter` interceptor queued within `context`, returning a
-  promise that will resolve to the next [[pr-loop-context]] action to take"
+  promise that will resolve to the next [[pr-loop-context]] action to take
+
+  TODO errors in [[resolve-data]] are not handled properly"
   [{queue ::queue
     _stack ::stack
     _history ::history
@@ -345,11 +380,11 @@
           ;; interceptor-spec is visible at the head of the queue
           ;; for the fn to inspect
           (pr/chain
-           (fn [ctx]
+           (fn [[data-val ctx]]
              (after-enter-update-context
               ctx
               interceptor-spec
-              (conj history-entry ::success))))
+              (into history-entry [data-val ::success]))))
 
           (prpr/catch-always
            (partial record-interceptor-error
@@ -357,7 +392,7 @@
                     (after-enter-update-context
                      context
                      interceptor-spec
-                     (conj history-entry ::error))))
+                     (into history-entry [:_ ::error]))))
 
           (pr/chain
            (fn [{queue ::queue :as c}]
@@ -439,13 +474,13 @@
           ;; fn can introspect the interceptor-spec from
           ;; the top of the stack
           (pr/chain
-           (fn [ctx]
+           (fn [[data-val ctx]]
              (after-leave-update-context
               ctx
               interceptor-fn-key
               has-thunk?
               interceptor-spec
-              (conj history-entry ::success))))
+              (into history-entry [data-val ::success]))))
 
           (prpr/catch-always
            (partial record-interceptor-error
@@ -457,7 +492,7 @@
                        ::catch-error)
                      false
                      interceptor-spec
-                     (conj history-entry ::error))))
+                     (into history-entry [:_ ::error]))))
 
           (pr/chain
            (fn [{stack ::stack :as c}]
