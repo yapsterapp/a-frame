@@ -13,16 +13,31 @@
 ;; don't know why, but cljs compile doesn't agree
 ;; with deftype here - probably some badly
 ;; documented interaction with the tag-readers
-(defrecord DataPath [path]
+(defrecord DataPath [path maybe?]
   p/IResolveData
   (-resolve-data [_spec interceptor-ctx]
     (let [data (get-in interceptor-ctx path)]
       ;; (warn "resolve DataPath" path)
+      (when (and (not maybe?)
+                 (nil? data))
+        (throw (ex-info "nil data" {:path path
+                                    :context interceptor-ctx})))
       data))
 
   IDataPath
   (-path [_]
     path))
+
+(defn data-path
+  ([path] (data-path path false))
+  ([path maybe?]
+   (if (sequential? path)
+     (->DataPath (vec path) maybe?)
+     (->DataPath [path] maybe?))))
+
+(defn data-path?
+  [o]
+  (instance? DataPath o))
 
 #?(:clj
    (defn print-data-path

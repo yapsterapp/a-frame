@@ -3,7 +3,7 @@
   (:require
    #?(:clj [promisespromises.util.macro :refer [if-cljs]])
    [a-frame.interceptor-chain.data.data-path
-    :refer [->DataPath]]))
+    :refer [data-path]]))
 
 ;; see https://github.com/clojure/clojurescript-site/issues/371
 ;; 3! different versions of the tag-readers are required for:
@@ -15,19 +15,13 @@
    (defn read-ctx-path
      [path]
      (if-cljs
-         `(->DataPath (into
-                       []
-                       ~path))
+         `(data-path ~path)
 
        ;; if we eval the path then we can use var symbols
        ;; in the path. this will only work on clj
-       (->DataPath (into
-                    []
-                    (eval path))))))
+       (data-path (eval path)))))
 
 #?(:cljs
    (defn ^:export read-ctx-path
      [path]
-     `(->DataPath (into
-                   []
-                   ~path))))
+     `(data-path ~path)))

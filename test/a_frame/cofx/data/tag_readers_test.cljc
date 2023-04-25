@@ -3,21 +3,21 @@
    [promisespromises.test :as t :refer [deftest testing is]]
    [a-frame.schema :as af.schema]
    [a-frame.interceptor-chain.data :as data]
-   [a-frame.interceptor-chain.data.data-path :refer [->DataPath]]
+   [a-frame.interceptor-chain.data.data-path :refer [data-path]]
    [a-frame.cofx.data.tag-readers]))
 
 (deftest coeffect-path-reader-test
-  (is (= (->DataPath [af.schema/a-frame-coeffects :foo])
+  (is (= (data-path [af.schema/a-frame-coeffects :foo])
          #a-frame.cofx/path [:foo]))
-  (is (= (->DataPath [af.schema/a-frame-coeffects  :foo])
+  (is (= (data-path [af.schema/a-frame-coeffects  :foo])
          #af.cofx/p [:foo])))
 
 (deftest event-path-reader-test
-  (is (= (->DataPath [af.schema/a-frame-coeffects
+  (is (= (data-path [af.schema/a-frame-coeffects
                       af.schema/a-frame-coeffect-event
                       :foo])
          #a-frame.cofx/event-path [:foo]))
-  (is (= (->DataPath [af.schema/a-frame-coeffects
+  (is (= (data-path [af.schema/a-frame-coeffects
                       af.schema/a-frame-coeffect-event
                       :foo])
          #af.cofx/evp [:foo])))

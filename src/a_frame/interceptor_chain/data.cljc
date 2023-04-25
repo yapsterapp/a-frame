@@ -43,9 +43,13 @@
 
   #?(:clj Object
      :cljs default)
-  (-resolve-data [spec interceptor-ctx]
+  (-resolve-data [spec _interceptor-ctx]
     ;; (warn "resolve-data DEFAULT" spec)
-    spec))
+    spec)
+
+  nil
+  (-resolve-data [_spec _interceptor-ctx]
+    nil))
 
 
 (defn resolve-data

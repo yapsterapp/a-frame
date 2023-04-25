@@ -1,3 +1,4 @@
 {:lint-as
  {promisespromises.test/deftest clojure.test/deftest
-  promisespromises.test/tlet clojure.core/let}}
+  promisespromises.test/tlet clojure.core/let
+  promisespromises.test/is clojure.test/is}}
