@@ -373,32 +373,41 @@
                                  context
                                  nil)]
 
-      (-> (maybe-execute-interceptor-fn-thunk thunk context)
+      (->
+       (pr/handle
+
+        (maybe-execute-interceptor-fn-thunk thunk context)
+
+        (fn [succ err]
 
           ;; don't move the interceptor-spec from queue->stack
           ;; until after the fn has executed - so the
           ;; interceptor-spec is visible at the head of the queue
           ;; for the fn to inspect
-          (pr/chain
-           (fn [[data-val ctx]]
+
+          (if (some? err)
+
+            (record-interceptor-error
+             context
              (after-enter-update-context
-              ctx
+              context
+              ::catch-enter
               interceptor-spec
-              (into history-entry [data-val ::success]))))
+              (into history-entry [:_ ::error]))
+             err)
 
-          (prpr/catch-always
-           (partial record-interceptor-error
-                    context
-                    (after-enter-update-context
-                     context
-                     interceptor-spec
-                     (into history-entry [:_ ::error]))))
+            (let [[data-val ctx] succ]
+              (after-enter-update-context
+               ctx
+               ::enter
+               interceptor-spec
+               (into history-entry [data-val ::success]))))))
 
-          (pr/chain
-           (fn [{queue ::queue :as c}]
-             (if (empty? queue)
-               [::break c]
-               [::recur c])))))))
+       (pr/then
+        (fn [{queue ::queue :as c}]
+          (if (empty? queue)
+            [::break c]
+            [::recur c])))))))
 
 (mx/defn ^:always-validate enter-all
   "Process the `:queue` of `context`, calling each `:enter` `fn` in turn.
@@ -467,38 +476,45 @@
 
           has-thunk? (some? thunk)]
 
-      (-> (maybe-execute-interceptor-fn-thunk thunk context)
+      (->
+       (pr/handle
+
+        (maybe-execute-interceptor-fn-thunk thunk context)
+
+        (fn [succ err]
 
           ;; don't pop the interceptor-spec from the stack
           ;; until the fn has been executed - so that the
           ;; fn can introspect the interceptor-spec from
           ;; the top of the stack
-          (pr/chain
-           (fn [[data-val ctx]]
+
+          (if (some? err)
+
+            (record-interceptor-error
+             context
              (after-leave-update-context
-              ctx
-              interceptor-fn-key
-              has-thunk?
+              context
+              (if (= ::leave interceptor-fn-key)
+                ::catch-leave
+                ::catch-error)
+              false
               interceptor-spec
-              (into history-entry [data-val ::success]))))
+              (into history-entry [:_ ::error]))
+             err)
 
-          (prpr/catch-always
-           (partial record-interceptor-error
-                    context
-                    (after-leave-update-context
-                     context
-                     (if (= ::leave interceptor-fn-key)
-                       ::catch-leave
-                       ::catch-error)
-                     false
-                     interceptor-spec
-                     (into history-entry [:_ ::error]))))
+            (let [[data-val ctx] succ]
+              (after-leave-update-context
+               ctx
+               interceptor-fn-key
+               has-thunk?
+               interceptor-spec
+               (into history-entry [data-val ::success]))))))
 
-          (pr/chain
-           (fn [{stack ::stack :as c}]
-             (if (empty? stack)
-               [::break c]
-               [::recur c])))))))
+       (pr/then
+        (fn [{stack ::stack :as c}]
+          (if (empty? stack)
+            [::break c]
+            [::recur c])))))))
 
 (mx/defn ^:always-validate leave-all
   "Process the `::stack` of `context`, calling, in LIFO order.
