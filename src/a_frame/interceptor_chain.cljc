@@ -323,6 +323,7 @@
   [resume-context
    next-context
    e]
+  ;; (prn "record-interceptor-error" e)
   (let [rethrow (rethrow? e)]
 
     (-> next-context
@@ -345,8 +346,15 @@
     stack ::stack
     _history ::history
     :as context}
+   _interceptor-fn-key
    interceptor-spec
    history-entry]
+
+  ;; (prn "after-enter-update-context"
+  ;;      _interceptor-fn-key
+  ;;      interceptor-spec
+  ;;      history-entry)
+
   (-> context
       (assoc ::queue (vec (rest queue)))
       (assoc ::stack (conj stack interceptor-spec))
@@ -427,6 +435,12 @@
    has-thunk?
    _interceptor-spec
    history-entry]
+
+  ;; (prn "after-leave-update-context"
+  ;;      interceptor-fn-key
+  ;;      _interceptor-spec
+  ;;      history-entry)
+
   (condp = interceptor-fn-key
     ::leave ;; normal leave fn
     (-> context
