@@ -386,7 +386,7 @@
 
         (maybe-execute-interceptor-fn-thunk thunk context)
 
-        (fn [succ err]
+        (fn [[data-val ctx :as _succ] err]
 
           ;; don't move the interceptor-spec from queue->stack
           ;; until after the fn has executed - so the
@@ -404,12 +404,11 @@
               (into history-entry [:_ ::error]))
              err)
 
-            (let [[data-val ctx] succ]
-              (after-enter-update-context
-               ctx
-               ::enter
-               interceptor-spec
-               (into history-entry [data-val ::success]))))))
+            (after-enter-update-context
+             ctx
+             ::enter
+             interceptor-spec
+             (into history-entry [data-val ::success])))))
 
        (pr/then
         (fn [{queue ::queue :as c}]
@@ -495,7 +494,7 @@
 
         (maybe-execute-interceptor-fn-thunk thunk context)
 
-        (fn [succ err]
+        (fn [[data-val ctx :as _succ] err]
 
           ;; don't pop the interceptor-spec from the stack
           ;; until the fn has been executed - so that the
@@ -516,13 +515,12 @@
               (into history-entry [:_ ::error]))
              err)
 
-            (let [[data-val ctx] succ]
-              (after-leave-update-context
-               ctx
-               interceptor-fn-key
-               has-thunk?
-               interceptor-spec
-               (into history-entry [data-val ::success]))))))
+            (after-leave-update-context
+             ctx
+             interceptor-fn-key
+             has-thunk?
+             interceptor-spec
+             (into history-entry [data-val ::success])))))
 
        (pr/then
         (fn [{stack ::stack :as c}]
