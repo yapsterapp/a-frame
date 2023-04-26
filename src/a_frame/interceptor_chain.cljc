@@ -164,26 +164,48 @@
     {::key interceptor-spec}
     interceptor-spec))
 
-(defn wrap-error
+(defn wrap-interceptor-error
   [resume-context e]
   (ex-info
    "interceptor failed"
-   {::context (sanitise-context resume-context)}
+   {::resume (sanitise-context resume-context)}
    e))
+
+(defn unwrap-resume-context-original-error
+  "unwrap layers of error wrapping (in case of nested :dispatch)
+   to get at the resume context and the causal exception
+
+   returns : [<resume-context> <original-error>]"
+  [e]
+  (let [{resume-ctx ::resume} (ex-data e)
+        cause (ex-cause e)
+        {wrapped-resume-ctx ::resume} (ex-data cause)]
+
+    (cond
+
+      ;; there is a resume context wrapping an exception with
+      ;; no resume context - it's the original
+      (and (some? resume-ctx)
+           (some? cause)
+           (nil? wrapped-resume-ctx))
+      [resume-ctx cause]
+
+      ;; there are nested resume contexts
+      (and (some? resume-ctx)
+           (some? cause)
+           (some? wrapped-resume-ctx))
+      (unwrap-resume-context-original-error cause)
+
+      ;; there is no resume context ¯\_(ツ)_/¯
+      :else
+      [nil e])))
 
 (defn unwrap-original-error
   "unwrap layers of error wrapping (in case of nested :dispatch)
    to get at the causal exception"
   [e]
-  (let [{ctx ::context} (ex-data e)
-        cause (ex-cause e)]
-
-    (if (and (some? ctx)
-             (some? cause))
-
-      (unwrap-original-error cause)
-
-      e)))
+  (let [[_ cause] (unwrap-resume-context-original-error e)]
+    cause))
 
 (defn interceptor-fn-requires-data?
   [interceptor-fn-key
@@ -336,7 +358,7 @@
            ;; add an error referencing the context,
            ;; which can be used to resume at the
            ;; point of failure
-           (wrap-error resume-context e))))))
+           (wrap-interceptor-error resume-context e))))))
 
 ;; processing fns
 
@@ -482,10 +504,10 @@
           interceptor-fn-key (if (some? error) ::error ::leave)
 
           [history-entry thunk] (interceptor-fn-history-thunk
-                               interceptor-fn-key
-                               interceptor-spec
-                               context
-                               error)
+                                 interceptor-fn-key
+                                 interceptor-spec
+                                 context
+                                 error)
 
           has-thunk? (some? thunk)]
 
@@ -547,7 +569,16 @@
   [{err ::error
     :as ctx}]
   (if (some? err)
-    (throw err)
+
+    (let [[resume-ctx org-err] (unwrap-resume-context-original-error err)]
+      (throw
+
+       (ex-info
+        "unhandled error"
+        {::context ctx
+         ::resume (sanitise-context resume-ctx)}
+        org-err)))
+
     ctx))
 
 (mx/defn execute*
@@ -568,7 +599,7 @@
   If an error occurs during execution `:enter` processing is terminated and the
   `:error` handlers of all executed interceptors are called (in LIFO order),
   with the original error wrapped in an ex-info with ex-data containing the
-  ::context at the point of failure - this can be used to resume processing
+  at the point of failure in the ::resume key - this can be used to resume processing
   from the failure point
 
   If the resulting `context` _still_ contains an error after this processing it
@@ -591,7 +622,7 @@
    err-or-resume-context]
   (let [ctx (if (map? err-or-resume-context)
               err-or-resume-context
-              (get (ex-data err-or-resume-context) ::context))]
+              (get (ex-data err-or-resume-context) ::resume))]
 
     (when (nil? ctx)
       (throw
