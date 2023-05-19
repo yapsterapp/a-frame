@@ -62,7 +62,12 @@
          (pr/let [coeffects' (if has-arg?
                                (handler app coeffects arg)
                                (handler app coeffects))]
-           (assoc context schema/a-frame-coeffects coeffects'))
+           [(assoc context schema/a-frame-coeffects coeffects')
+
+            ;; second value of response is a log value
+            (if has-arg?
+              arg
+              :_)])
 
          (throw (err/ex-info
                  ::no-cofx-handler
