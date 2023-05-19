@@ -1,5 +1,6 @@
 (ns a-frame.interceptor-chain.schema
   (:require
+   [malli.core :as m]
    [a-frame.schema :as af.schema]
    [a-frame.interceptor-chain :as-alias intc]))
 
@@ -20,11 +21,12 @@
 
   All methods may return either promises or plain values."
 
-  [:map
-   [::intc/name {:optional true} :keyword]
-   [::intc/enter {:optional true} fn?]
-   [::intc/leave {:optional true} fn?]
-   [::intc/error {:optional true} fn?]])
+  (m/schema
+   [:map
+    [::intc/name {:optional true} :keyword]
+    [::intc/enter {:optional true} fn?]
+    [::intc/leave {:optional true} fn?]
+    [::intc/error {:optional true} fn?]]))
 
 (def InterceptorSpec
   "the interceptor chain is created with a list of InterceptorSpecs. each
@@ -39,47 +41,56 @@
    something which has no opaque objects and is serializable/deserializable)
    interceptor chain to be registered, which has numerous benefits"
 
-  [:or
+  (m/schema
+   [:or
 
-   :keyword
+    :keyword
 
-   [:map
-    [::intc/key :keyword]
-    [::intc/enter-data {:optional true} :any]
-    [::intc/leave-data {:optional true} :any]]])
+    [:map
+     [::intc/key :keyword]
+     [::intc/enter-data {:optional true} :any]
+     [::intc/leave-data {:optional true} :any]]]))
 
 (def InterceptorList
-  [:sequential InterceptorSpec])
+  (m/schema
+   [:sequential InterceptorSpec]))
 
 (def interceptor-fn-keys
   [::intc/enter ::intc/leave ::intc/error])
 
 (def InterceptorFnKey
-  (into [:enum] interceptor-fn-keys))
+  (m/schema
+   (into [:enum] interceptor-fn-keys)))
 
 (def interceptor-fn-noop
   ::intc/noop)
 
 (def InterceptorFnHistoryKey
-  (conj InterceptorFnKey interceptor-fn-noop))
+  (-> InterceptorFnKey
+       (m/form)
+       (conj interceptor-fn-noop)
+       (m/schema)))
 
 (def InterceptorHistoryElem
-  [:or
+  (m/schema
 
-   [:tuple InterceptorSpec InterceptorFnHistoryKey]
+   [:or
 
-   [:tuple InterceptorSpec InterceptorFnHistoryKey :any]])
+    [:tuple InterceptorSpec InterceptorFnHistoryKey]
+
+    [:tuple InterceptorSpec InterceptorFnHistoryKey :any]]))
 
 (def InterceptorContext
-  [:map
-   ;; queue of InterceptorSpecs to ::enter
-   [::intc/queue [:vector InterceptorSpec]]
-   ;; stack of InterceptorSpecs to ::leave
-   [::intc/stack [:sequential InterceptorSpec]]
-   ;; history of executed functions
-   [::intc/history [:vector InterceptorHistoryElem]]
-   ;; any active error
-   [::intc/error {:optional true} :any]
+  (m/schema
+   [:map
+    ;; queue of InterceptorSpecs to ::enter
+    [::intc/queue [:vector InterceptorSpec]]
+    ;; stack of InterceptorSpecs to ::leave
+    [::intc/stack [:sequential InterceptorSpec]]
+    ;; history of executed functions
+    [::intc/history [:vector InterceptorHistoryElem]]
+    ;; any active error
+    [::intc/error {:optional true} :any]
 
-   [af.schema/a-frame-app-ctx :any]
-   [af.schema/a-frame-router :any]])
+    [af.schema/a-frame-app-ctx :any]
+    [af.schema/a-frame-router :any]]))
