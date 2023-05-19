@@ -9,7 +9,6 @@
    [a-frame.schema :as af.schema]
    [a-frame.registry :as registry]
    [a-frame.interceptor-chain.schema :as intc.schema]
-   [a-frame.interceptor-chain.data :as data]
    [a-frame.interceptor-chain.data.tag-readers]))
 
 ;; a more data-driven interceptor chain for a-frame
@@ -207,38 +206,6 @@
   (let [[_ cause] (unwrap-resume-context-original-error e)]
     cause))
 
-(defn interceptor-fn-requires-data?
-  [interceptor-fn-key
-   interceptor-spec]
-
-  (if (#{::enter ::leave} interceptor-fn-key)
-    (let [data-key (interceptor-data-key interceptor-fn-key)]
-      (contains? interceptor-spec data-key))
-
-    false))
-
-(defn resolve-interceptor-data
-  "resolve the interceptor data, returning either
-    - [data-val] if there was data specified
-    - nil if no data was specified"
-  [interceptor-fn-key
-   interceptor-spec
-   context]
-
-  (condp contains? interceptor-fn-key
-
-    #{::enter ::leave}
-    (let [data-key (interceptor-data-key interceptor-fn-key)]
-
-      (when (contains? interceptor-spec data-key)
-        (let [spec (get interceptor-spec data-key)
-              data (data/resolve-data spec context)]
-          ;; (warn "resolve-interceptor-data" spec data)
-          [data])))
-
-    #{::error}
-    nil))
-
 (defn interceptor-fn-history-thunk
   "returns a [<history-entry> <interceptor-fn-thunk>]
 
@@ -272,22 +239,15 @@
         ;; be recorded and dealt with by the normal
         ;; interceptor chain mechanism
         #{::enter ::leave}
-        (let [thunk (if (interceptor-fn-requires-data?
-                         interceptor-fn-key
-                         norm-interceptor-spec)
-
-                      (fn [ctx]
-                        (pr/let [[data-val] (resolve-interceptor-data
-                                             interceptor-fn-key
-                                             norm-interceptor-spec
-                                             context)
-                                 next-ctx (f ctx data-val)]
-
-                          [data-val next-ctx]))
-
-                      (fn [ctx]
-                        (pr/let [next-ctx (f ctx)]
-                          [:_ next-ctx])))]
+        (let [thunk (fn [ctx]
+                      ;; if the fn returns a vector/seq, then it's
+                      ;; [next-context log], otherwise it's just
+                      ;; the next-context
+                      (pr/let [nx-ctx-or-nx-ctx-log (f ctx norm-interceptor-spec)]
+                        (let [[nx-ctx log] (if (sequential? nx-ctx-or-nx-ctx-log)
+                                             nx-ctx-or-nx-ctx-log
+                                             [nx-ctx-or-nx-ctx-log])]
+                          [(or log :_) nx-ctx])))]
 
           [[interceptor-spec interceptor-fn-key ::execute]
            thunk])
@@ -295,8 +255,11 @@
         #{::error}
         [[interceptor-spec interceptor-fn-key ::execute]
          (fn [ctx]
-           (pr/let [next-ctx (f ctx error)]
-             [:_ next-ctx]))])
+           (pr/let [nx-ctx-or-nx-ctx-log (f ctx norm-interceptor-spec error)]
+             (let [[nx-ctx log] (if (sequential? nx-ctx-or-nx-ctx-log)
+                                  nx-ctx-or-nx-ctx-log
+                                  [nx-ctx-or-nx-ctx-log])]
+               [(or log :_) nx-ctx])))])
 
       ;; no interceptor fn, so no thunk
       [[interceptor-spec interceptor-fn-key ::noop]

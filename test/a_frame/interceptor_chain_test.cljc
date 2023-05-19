@@ -34,8 +34,14 @@
 (deftest execute-single-interceptor-test
   (sut/register-interceptor
    ::execute-single-interceptor-test
-   {::sut/enter (fn [x] (assoc x :entered? true))
-    ::sut/leave (fn [x] (assoc x :left? true))})
+   {::sut/enter (fn [x icspec]
+                  (is (= {::sut/key ::execute-single-interceptor-test}
+                         icspec))
+                  (assoc x :entered? true))
+    ::sut/leave (fn [x icspec]
+                  (is (= {::sut/key ::execute-single-interceptor-test}
+                         icspec))
+                  (assoc x :left? true))})
   (pr/let
       [chain [::execute-single-interceptor-test]
        input {:test (rand-int 9999)}
@@ -49,52 +55,24 @@
                             [::execute-single-interceptor-test ::sut/leave ::sut/execute :_ ::sut/success]]})
            r))))
 
-(deftest execute-single-interceptor-with-data-test
-  (sut/register-interceptor
-   ::execute-single-interceptor-with-data-test
-   {::sut/enter (fn [x data]
-                  (is (= "foofoo" data))
-                  (assoc x :entered? true))
-    ::sut/leave (fn [x data]
-                  (is (= "barbar" data))
-                  (assoc x :left? true))})
-
-  (pr/let
-      [intc-with-data {::sut/key ::execute-single-interceptor-with-data-test
-                       ::sut/enter-data #a-frame.ctx/path [::foo]
-                       ::sut/leave-data #a-frame.ctx/path [::bar]}
-       chain [intc-with-data]
-       input {:test (rand-int 9999)
-              ::foo "foofoo"
-              ::bar "barbar"}
-       r (sut/execute ::app ::a-frame chain input)]
-    (is (= (merge
-            empty-interceptor-context
-            input
-            {:entered? true
-             :left? true}
-            {::sut/history [[intc-with-data ::sut/enter ::sut/execute "foofoo"  ::sut/success]
-                            [intc-with-data ::sut/leave ::sut/execute "barbar" ::sut/success]]})
-           r))))
-
 (deftest execute-multiple-interceptors-test
   (doseq [[key inter] [[::execute-multiple-interceptors-test-A
                         {::sut/name ::copy-restore
-                         ::sut/enter (fn [{t :test :as x}]
+                         ::sut/enter (fn [{t :test :as x} _icspec]
                                        (assoc x :test2 t))
-                         ::sut/leave (fn [{t :test2 :as x}]
+                         ::sut/leave (fn [{t :test2 :as x} _icspec]
                                        (-> x
                                            (assoc :test t)
                                            (dissoc :test2)))}]
 
                        [::execute-multiple-interceptors-test-B
                         {::sut/name ::mult
-                         ::sut/enter (fn [x]
+                         ::sut/enter (fn [x _icspec]
                                        (update x :test * 2))}]
 
                        [::execute-multiple-interceptors-test-C
                         {::sut/name ::save-state
-                         ::sut/enter (fn [x]
+                         ::sut/enter (fn [x _icspec]
                                        (update
                                         x
                                         :states (fnil conj [])
@@ -103,7 +81,7 @@
 
                        [::execute-multiple-interceptors-test-D
                         {::sut/name ::mark-leaving
-                         ::sut/leave (fn [x]
+                         ::sut/leave (fn [x _icspec]
                                        (assoc x :leaving-at (epoch)))}]]]
     (sut/register-interceptor key inter))
 
@@ -134,17 +112,17 @@
 
 (deftest execute-promise-based-interceptors-test
   (doseq [[key inter] [[::execute-promise-based-interceptors-test-A
-                        {::sut/enter (fn [x]
+                        {::sut/enter (fn [x _icspec]
                                        (pr/resolved
                                         (assoc x :success true)))}]
                        [::execute-promise-based-interceptors-test-B
-                        {::sut/leave (fn [x]
+                        {::sut/leave (fn [x _icspec]
                                        (pr/chain
                                         (pr/resolved x)
                                         (fn [x]
                                           (assoc x :chain true))))}]
                        [::execute-promise-based-interceptors-test-C
-                        {::sut/enter (fn [x]
+                        {::sut/enter (fn [x _icspec]
                                        (pr/let [x' (assoc x :ddo true)]
                                          x'))}]]]
     (sut/register-interceptor key inter))
@@ -173,12 +151,12 @@
 
 (deftest execute-queue-alteration-test
   (doseq [[key inter] [[::execute-queue-alteration-test-late-arrival
-                        {::sut/enter (fn [x] (assoc x :arrived :late))
-                         ::sut/leave (fn [x] (assoc x :left :early))}]
+                        {::sut/enter (fn [x _icspec] (assoc x :arrived :late))
+                         ::sut/leave (fn [x _icspec] (assoc x :left :early))}]
 
                        [::execute-queue-alteration-test-alteration
                         {::sut/enter
-                         (fn [x]
+                         (fn [x _icspec]
                            (prpr/always
                             (sut/enqueue
                              x
@@ -203,13 +181,14 @@
 
 (deftest execute-stack-alteration-test
   (doseq [[key inter] [[::execute-stack-alteration-test-late-arrival
-                        {::sut/enter (fn [x] (assoc x :arrived :late))
-                         ::sut/leave (fn [x] (assoc x :left :early))}]
+                        {::sut/enter (fn [x _icspec] (assoc x :arrived :late))
+                         ::sut/leave (fn [x _icspec] (assoc x :left :early))}]
 
                        [::execute-stack-alteration-test-alteration
                         {::sut/leave
                          (fn [{[hd & rst :as _stack] ::sut/stack
-                               :as x}]
+                               :as x}
+                              _icspec]
                            (prpr/always
                             (assoc
                              x
@@ -254,10 +233,10 @@
         (testing "captures error in :enter interceptor"
           (doseq [[k i] [[::execute-error-handling-test-enter-boom
                           {::sut/enter
-                           (fn [_] (throw (ex-info "boom" {:id ::boom})))}]
+                           (fn [_ _] (throw (ex-info "boom" {:id ::boom})))}]
                          [::execute-error-handling-test-enter-unexpected-boom
                           {::sut/enter
-                           (fn [_]
+                           (fn [_ _]
                              (throw (ex-info
                                      "unexpected-boom"
                                      {:id ::unexpected-boom})))}]]]
@@ -272,13 +251,13 @@
         (testing "captures error in :leave interceptor"
           (doseq [[k i] [[::execute-error-handling-test-leave-unexpected-boom
                           {::sut/leave
-                           (fn [_] (throw (ex-info "unexpected-boom"
-                                                  {:id ::unexpected-boom})))}
+                           (fn [_ _] (throw (ex-info "unexpected-boom"
+                                                     {:id ::unexpected-boom})))}
                           ]
 
                          [::execute-error-handling-test-leave-boom
                           {::sut/leave
-                           (fn [_] (throw (ex-info "boom" {:id ::boom})))}]]]
+                           (fn [_ _] (throw (ex-info "boom" {:id ::boom})))}]]]
             (sut/register-interceptor k i))
 
           (pr/let
@@ -294,22 +273,22 @@
             (doseq [[k i]
                     [[::execute-error-handling-test-error-handler-error-left-with
                       {::sut/error
-                       (fn [x err] (reset! left-with [::error err]) x)
+                       (fn [x _ err] (reset! left-with [::error err]) x)
 
                        ::sut/leave
-                       (fn [x] (reset! left-with [::leave]) x)}]
+                       (fn [x _] (reset! left-with [::leave]) x)}]
 
                      [::execute-error-handling-test-error-handler-error-error
-                      {::sut/error (fn [_ _]
+                      {::sut/error (fn [_ _ _]
                                      (throw (ex-info
                                              "error-error"
                                              {:id ::error-error})))}]
 
                      [::execute-error-handling-test-error-handler-error-boom
-                      {::sut/enter (fn [_] (throw
-                                           (ex-info
-                                            "boom"
-                                            {:id ::boom})))}]]]
+                      {::sut/enter (fn [_ _] (throw
+                                              (ex-info
+                                               "boom"
+                                               {:id ::boom})))}]]]
 
               (sut/register-interceptor k i))
 
@@ -328,15 +307,15 @@
         (testing "captures error promises"
           (doseq [[k i]
                   [[::execute-error-handling-test-error-promises-boom
-                    {::sut/enter (fn [_] (pr/rejected
-                                         (ex-info "boom"
-                                                  {:id ::boom})))}]
+                    {::sut/enter (fn [_ _] (pr/rejected
+                                            (ex-info "boom"
+                                                     {:id ::boom})))}]
 
                    [::execute-error-handling-test-error-promises-unexpected-boom
-                    {::sut/enter (fn [_] (throw
-                                         (ex-info
-                                          "unexpected-boom"
-                                          {:id ::unexpected-boom})))}]]]
+                    {::sut/enter (fn [_ _] (throw
+                                            (ex-info
+                                             "unexpected-boom"
+                                             {:id ::unexpected-boom})))}]]]
 
             (sut/register-interceptor k i))
 
@@ -350,10 +329,10 @@
 
         (testing "throws if error not cleared"
           (doseq [[k i] [[::execute-error-handline-not-cleared-clear
-                          {::sut/error (fn [c _] c)}]
+                          {::sut/error (fn [c _ _] c)}]
                          [::execute-error-handling-not-cleared-boom
-                          {::sut/enter (fn [_] (pr/rejected
-                                                (ex-info "boom" {:fail :test})))}]]]
+                          {::sut/enter (fn [_ _] (pr/rejected
+                                                  (ex-info "boom" {:fail :test})))}]]]
             (sut/register-interceptor k i))
 
           (pr/let
@@ -382,14 +361,14 @@
 
         (doseq [[key inter]
                 [[::resume-test-throw-once
-                  {::sut/enter (fn [x]
+                  {::sut/enter (fn [x _]
                                  (if @throw?-a
                                    (do
                                      (reset! throw?-a false)
                                      ;; (prn "THROW")
                                      (throw (ex-info "boo" {})))
                                    x))
-                   ::sut/leave (fn [x] (assoc x :left? true))}]]]
+                   ::sut/leave (fn [x _] (assoc x :left? true))}]]]
           (sut/register-interceptor key inter))
 
         (testing "can resume after failure"
