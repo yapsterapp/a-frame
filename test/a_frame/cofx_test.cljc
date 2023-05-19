@@ -167,7 +167,7 @@
              int-r (interceptor-chain/execute
                     ::app
                     ::a-frame
-                    [(sut/inject-validated-cofx cofx-key [:= 100] cofx-key 100)]
+                    [(sut/inject-validated-cofx cofx-key 100 [:= 100] cofx-key)]
                     init-int-ctx)]
 
       (is (= (assoc
@@ -202,12 +202,16 @@
                     ::app
                     ::a-frame
                     [(sut/inject-validated-cofx
-                      static-cofx-key :keyword static-cofx-key)
+                      static-cofx-key
+                      :keyword
+                      static-cofx-key)
 
                      (sut/inject-validated-cofx
-                      resolved-cofx-key :any resolved-cofx-key
+                      resolved-cofx-key
                       {:a #a-frame.cofx/path [::inject-validated-cofx-1-arg-resolver-static]
-                       :b #a-frame.cofx/event-path [1]})]
+                       :b #a-frame.cofx/event-path [1]}
+                      :any
+                      resolved-cofx-key)]
                     init-int-ctx)]
 
       (is (= (assoc

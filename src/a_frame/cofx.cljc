@@ -75,8 +75,8 @@
   "a cofx with a result with a defined schema to be
    injected at a given path"
   ([id schema path]
-   (inject-validated-cofx id schema path nil))
-  ([id schema path arg-spec]
+   (inject-validated-cofx id nil schema path))
+  ([id arg-spec schema path]
    (cond->
        {::interceptor-chain/key ::inject-validated-cofx
         ::id id
