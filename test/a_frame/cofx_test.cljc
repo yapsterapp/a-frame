@@ -1,6 +1,7 @@
 (ns a-frame.cofx-test
   (:require
    [promesa.core :as pr]
+   [promisespromises.promise :as prpr]
    [promisespromises.test :refer [deftest is testing use-fixtures]]
    [a-frame.schema :as schema]
    [a-frame.registry :as registry]
@@ -128,6 +129,32 @@
               init-int-ctx
               schema/a-frame-coeffects {cofx-key 100})
              (apply dissoc int-r interceptor-chain/context-keys)))))
+
+  (testing "invalid 0-arg cofx"
+    (pr/let [cofx-key ::inject-validated-cofx-test-0-arg-invalid
+
+             _ (sut/reg-cofx cofx-key (fn [app _cofx]
+                                        (is (= ::app app))
+                                        100))
+
+             init-int-ctx {}
+
+             interceptors  [(sut/inject-validated-cofx
+                             cofx-key
+                             :string
+                             cofx-key)]
+
+             [k e] (prpr/merge-always
+                    (interceptor-chain/execute
+                     ::app
+                     ::a-frame
+                     interceptors
+                     init-int-ctx))]
+
+      (is (= ::prpr/error k))
+
+      (is (= :a-frame.cofx/invalid-cofx
+             (-> e ex-cause ex-data :error/type)))))
 
   (testing "1-arg cofx"
     (pr/let [cofx-key ::inject-validated-cofx-test-1-arg
