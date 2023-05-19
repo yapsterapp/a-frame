@@ -18,12 +18,12 @@
    interceptor chain"
   ([id]
    {::interceptor-chain/key ::inject-cofx
-    ::interceptor-chain/enter-data {::id id}})
+    ::id id})
 
   ([id arg-spec]
    {::interceptor-chain/key ::inject-cofx
-    ::interceptor-chain/enter-data {::id id
-                                    ::arg arg-spec}}))
+    ::id id
+    ::arg arg-spec}))
 
 ;; interceptor
 ;;
@@ -47,16 +47,15 @@
        coeffects schema/a-frame-coeffects
        :as context}
 
-      {enter-data-spec ::interceptor-chain/enter-data
-       :as _interceptor-spec}]
+      {id ::id
+       arg-spec ::arg
+       :as interceptor-spec}]
 
-     (let [{id ::id
-            arg ::arg
-            :as data} (data/resolve-data enter-data-spec context)
+     (let [handler (registry/get-handler schema/a-frame-kind-cofx id)
 
-           has-arg? (contains? data ::arg)
-
-           handler (registry/get-handler schema/a-frame-kind-cofx id)]
+           has-arg? (contains? interceptor-spec ::arg)
+           arg (when has-arg?
+                 (data/resolve-data arg-spec context))]
 
        (if (some? handler)
          (pr/let [coeffects' (if has-arg?
@@ -65,9 +64,7 @@
            [(assoc context schema/a-frame-coeffects coeffects')
 
             ;; second value of response is a log value
-            (if has-arg?
-              arg
-              :_)])
+            (if has-arg? arg :_)])
 
          (throw (err/ex-info
                  ::no-cofx-handler
