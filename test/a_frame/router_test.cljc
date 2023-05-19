@@ -144,7 +144,7 @@
 
   (testing "applies global interceptors"
     (let [intc {::interceptor-chain/name ::applies-global-interceptors-intc
-                ::interceptor-chain/leave (fn [ctx] (assoc ctx ::intc ::ok))}
+                ::interceptor-chain/leave (fn [ctx _] (assoc ctx ::intc ::ok))}
           _ (interceptor-chain/register-interceptor
              ::applies-global-interceptors-intc
              intc)
@@ -180,13 +180,13 @@
           _ (interceptor-chain/register-interceptor
              ::foo
              {::interceptor-chain/name ::foo
-              ::interceptor-chain/enter (fn [ctx]
+              ::interceptor-chain/enter (fn [ctx _]
                                           (assoc-in
                                            ctx
                                            [schema/a-frame-coeffects
                                             ::foo-enter]
                                            true))
-              ::interceptor-chain/leave (fn [ctx]
+              ::interceptor-chain/leave (fn [ctx _]
                                           (assoc-in
                                            ctx
                                            [schema/a-frame-coeffects
@@ -196,13 +196,13 @@
           _ (interceptor-chain/register-interceptor
              ::bar
              {::interceptor-chain/name ::bar
-              ::interceptor-chain/enter (fn [ctx]
+              ::interceptor-chain/enter (fn [ctx _]
                                           (assoc-in
                                            ctx
                                            [schema/a-frame-coeffects
                                             ::bar-enter]
                                            true))
-              ::interceptor-chain/leave (fn [ctx]
+              ::interceptor-chain/leave (fn [ctx _]
                                           (assoc-in
                                            ctx
                                            [schema/a-frame-coeffects
@@ -665,8 +665,8 @@
                         (interceptor-chain/unwrap-original-error val))
 
                 {err-type :error/type
-                  event ::event
-                  :as _err-data} (ex-data cause)]
+                 event ::event
+                 :as _err-data} (ex-data cause)]
 
             (is (= [0 2 4] @out-a))
             (is (not (stream.impl/closed? event-s)))

@@ -16,8 +16,8 @@
    (<fx-handler> app fx-data)"
   [id handler]
   (let [ctx-handler (fn [{app schema/a-frame-app-ctx
-                         :as _context}
-                        fx-data]
+                          :as _context}
+                         fx-data]
                       (handler app fx-data))]
     (registry/register-handler schema/a-frame-kind-fx id ctx-handler)))
 
@@ -74,6 +74,7 @@
            [(conj results r) []]
 
            :else
+           #_{:clj-kondo/ignore [:invalid-arity]}
            (pr/recur [(conj results r) rest-map-fx])))))))
 
 (defn do-seq-of-effects
@@ -94,7 +95,9 @@
    (fn do-fx-leave
      [{_app schema/a-frame-app-ctx
        effects schema/a-frame-effects
-       :as context}]
+       :as context}
+
+      _interceptor-spec]
 
      (pr/let [_ (if (map? effects)
                   (do-map-of-effects context effects)
@@ -143,12 +146,12 @@
 ;; by default
 
 (mx/defn dispatch
-   [{router schema/a-frame-router
-          :as context}
-         event :- schema/EventOrEventOptions]
-   (router/dispatch
-    router
-    (xev-with-all-coeffects context false event)))
+  [{router schema/a-frame-router
+    :as context}
+   event :- schema/EventOrEventOptions]
+  (router/dispatch
+   router
+   (xev-with-all-coeffects context false event)))
 
 (reg-fx-ctx
  :a-frame/dispatch
@@ -158,12 +161,12 @@
 ;; transitive by default
 
 (mx/defn dispatch-n
-   [{router schema/a-frame-router
-          :as context}
-         events :- schema/EventOrEventOptionsList]
-   (router/dispatch-n
-    router
-    (map (partial xev-with-all-coeffects context false) events)))
+  [{router schema/a-frame-router
+    :as context}
+   events :- schema/EventOrEventOptionsList]
+  (router/dispatch-n
+   router
+   (map (partial xev-with-all-coeffects context false) events)))
 
 (reg-fx-ctx
  :a-frame/dispatch-n

@@ -18,7 +18,9 @@
    ::interceptor-chain/enter
    (fn fx-handler-fn
      [context
-      pure-handler-key]
+      {pure-handler-key ::interceptor-chain/enter-data
+       :as _interceptor-spec}]
+
      (let [handler-fn (registry/get-handler
                        schema/a-frame-kind-event-pure
                        pure-handler-key)
@@ -47,7 +49,9 @@
    ::interceptor-chain/enter
    (fn ctx-handler-fn
      [context
-      pure-handler-key]
+
+      {pure-handler-key ::interceptor-chain/enter-data
+       :as _interceptor-spec}]
      (let [handler-fn (registry/get-handler
                        schema/a-frame-kind-event-pure
                        pure-handler-key)]
@@ -64,7 +68,7 @@
   {::interceptor-chain/key ::extract-coeffects
 
    ::interceptor-chain/leave
-   (fn [ctx]
+   (fn [ctx _interceptor-spec]
      (info "extract-coeffects-interceptor")
      (get ctx schema/a-frame-coeffects))})
 
@@ -88,11 +92,12 @@
 
    ::interceptor-chain/enter
    (fn [context
-        interceptor-spec]
+        {proxied-interceptor-spec ::interceptor-chain/enter-data
+         :as _interceptor-spec}]
 
      (interceptor-chain/maybe-execute-interceptor-fn
       ::interceptor-chain/enter
-      interceptor-spec
+      proxied-interceptor-spec
       context
       nil))})
 
@@ -133,9 +138,9 @@
 
          "\n\nfn-key: " (pr-str fn-key)
          "\n\nqueue:\n" (with-out-str
-                         (pprint/pprint err-ctx-queue))
+                          (pprint/pprint err-ctx-queue))
          "\n\nstack:\n" (with-out-str
-                         (pprint/pprint err-ctx-stack))
+                          (pprint/pprint err-ctx-stack))
 
          "\n\nhistory:\n"
          (with-out-str
@@ -151,6 +156,7 @@
 
    ::interceptor-chain/error
    (fn [context
+        _interceptor-spec
         err]
      (let [org-err (interceptor-chain/unwrap-original-error err)]
 
@@ -186,18 +192,16 @@
 
    ::interceptor-chain/enter
    (fn
-     ([context]
-      (let [data {:id #?(:clj (uuid/v1)
-                         :cljs (uuid/make-random-uuid))}]
-        (info "set-log-context-interceptor" data)
-        (assoc-log-context
-         context
-         data)))
-     ([context data]
-      (info "set-log-context-interceptor" data)
-      (assoc-log-context
-       context
-       data)))})
+     [context
+      {data ::interceptor-chain/data
+       :as _interceptor-spec}]
+     (let [data (or data
+                    {:id #?(:clj (uuid/v1)
+                            :cljs (uuid/make-random-uuid))})]
+       (info "set-log-context-interceptor" data)
+       (assoc-log-context
+        context
+        data)))})
 
 (interceptor-chain/register-interceptor
  ::set-log-context
