@@ -149,12 +149,6 @@
 
     interceptor))
 
-(defn interceptor-data-key
-  [interceptor-fn-key]
-  (case interceptor-fn-key
-    ::enter ::enter-data
-    ::leave ::leave-data))
-
 (defn normalize-interceptor-spec
   "turns keyword interceptor-specs into maps
    {::key <interceptor-key>}"

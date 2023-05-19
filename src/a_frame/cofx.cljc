@@ -82,11 +82,10 @@
   ([id schema path]
    (inject-validated-cofx id schema path nil))
   ([id schema path arg-spec]
-   {::interceptor-chain/key ::inject-validated-cofx
-    ::interceptor-chain/enter-data (cond-> {::id id}
-
-                                     (some? arg-spec)
-                                     (assoc ::arg arg-spec))}))
+   (cond->
+       {::interceptor-chain/key ::inject-validated-cofx
+        ::id id}
+     (some? arg-spec) (assoc ::arg arg-spec))))
 
 (def inject-validated-cofx-interceptor
   {::interceptor-chain/name ::inject-validated-cofx
@@ -97,7 +96,8 @@
        coeffects schema/a-frame-coeffects
        :as context}
 
-      {enter-data-spec ::interceptor-chain/enter-data
+      {id ::id
+       arg-spec ::arg
        :as _interceptor-spec}])})
 
 (interceptor-chain/register-interceptor

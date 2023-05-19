@@ -33,9 +33,7 @@
    InterceptorSpec is either
    -  simple keyword, referencing a registered interceptor which will cause
       ::intc/enter and ::intc/leave fns to be invoked with 1-arity, or
-   - a map with mandatory `::intc/key`. if there is data
-      (either `::intc/enter-data` or `::intc/leave-data`) then `::intc/enter` and `::intc/leave` will
-      be invoked with their 2-arity
+   - a map with mandatory `::intc/key`
 
    providing data like this allows a pure-data (in the re-frame sense - roughly
    something which has no opaque objects and is serializable/deserializable)
@@ -47,9 +45,7 @@
     :keyword
 
     [:map
-     [::intc/key :keyword]
-     [::intc/enter-data {:optional true} :any]
-     [::intc/leave-data {:optional true} :any]]]))
+     [::intc/key :keyword]]]))
 
 (def InterceptorList
   (m/schema

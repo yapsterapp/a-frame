@@ -11,14 +11,14 @@
 (defn fx-handler->interceptor
   [pure-handler-key]
   {::interceptor-chain/key ::fx-event-handler
-   ::interceptor-chain/enter-data pure-handler-key})
+   ::pure-handler-key pure-handler-key})
 
 (def fx-event-handler-interceptor
   {::interceptor-chain/name ::fx-event-handler
    ::interceptor-chain/enter
    (fn fx-handler-fn
      [context
-      {pure-handler-key ::interceptor-chain/enter-data
+      {pure-handler-key ::pure-handler-key
        :as _interceptor-spec}]
 
      (let [handler-fn (registry/get-handler
@@ -41,7 +41,7 @@
 (defn ctx-handler->interceptor
   [pure-handler-key]
   {::interceptor-chain/key ::ctx-event-handler
-   ::interceptor-chain/enter-data pure-handler-key})
+   ::pure-handler-key pure-handler-key})
 
 (def ctx-event-handler-interceptor
   {::interceptor-chain/name ::ctx-event-handler
@@ -50,7 +50,7 @@
    (fn ctx-handler-fn
      [context
 
-      {pure-handler-key ::interceptor-chain/enter-data
+      {pure-handler-key ::pure-handler-key
        :as _interceptor-spec}]
      (let [handler-fn (registry/get-handler
                        schema/a-frame-kind-event-pure
@@ -79,7 +79,7 @@
 (defn interceptor->remove-leave-error
   [interceptor-spec]
   {::interceptor-chain/key ::remove-leave-error-proxy
-   ::interceptor-chain/enter-data interceptor-spec})
+   ::proxied-interceptor interceptor-spec})
 
 (def remove-leave-error-proxy-interceptor
   "a proxy interceptor which removes ::leave and ::error
@@ -87,12 +87,12 @@
 
    to do this the proxy interceptor defines only an
    ::enter fn and accepts an InterceptorSpec
-   for the proxied interceptor as enter-data"
+   for the proxied interceptor"
   {::interceptor-chain/name ::remove-leave-error-proxy
 
    ::interceptor-chain/enter
    (fn [context
-        {proxied-interceptor-spec ::interceptor-chain/enter-data
+        {proxied-interceptor-spec ::proxied-interceptor
          :as _interceptor-spec}]
 
      (interceptor-chain/maybe-execute-interceptor-fn
@@ -193,7 +193,7 @@
    ::interceptor-chain/enter
    (fn
      [context
-      {data ::interceptor-chain/data
+      {data ::log-context-data
        :as _interceptor-spec}]
      (let [data (or data
                     {:id #?(:clj (uuid/v1)
@@ -218,4 +218,4 @@
    be logged in a-frame error reports"
   [log-context-data-spec]
   {::interceptor-chain/key ::set-log-context
-   ::interceptor-chain/enter-data log-context-data-spec})
+   ::log-context-data log-context-data-spec})
