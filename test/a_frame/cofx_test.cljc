@@ -102,3 +102,96 @@
                                    :b {:event-data :val}}}))
 
              (apply dissoc int-r interceptor-chain/context-keys))))))
+
+(deftest inject-validated-cofx-test
+  (testing "0-arg cofx"
+    (pr/let [cofx-key ::inject-validated-cofx-test-0-arg
+
+             _ (sut/reg-cofx cofx-key (fn [app _cofx]
+                                        (is (= ::app app))
+                                        100))
+
+             init-int-ctx {}
+
+             interceptors  [(sut/inject-validated-cofx
+                             cofx-key
+                             :int
+                             cofx-key)]
+
+             int-r (interceptor-chain/execute
+                    ::app
+                    ::a-frame
+                    interceptors
+                    init-int-ctx)]
+
+      (is (= (assoc
+              init-int-ctx
+              schema/a-frame-coeffects {cofx-key 100})
+             (apply dissoc int-r interceptor-chain/context-keys)))))
+
+  (testing "1-arg cofx"
+    (pr/let [cofx-key ::inject-validated-cofx-test-1-arg
+             _ (sut/reg-cofx cofx-key (fn [app _cofx arg]
+                                        (is (= ::app app))
+                                        arg))
+
+             init-int-ctx {}
+
+             int-r (interceptor-chain/execute
+                    ::app
+                    ::a-frame
+                    [(sut/inject-validated-cofx cofx-key [:= 100] cofx-key 100)]
+                    init-int-ctx)]
+
+      (is (= (assoc
+              init-int-ctx
+              schema/a-frame-coeffects {cofx-key 100})
+             (apply dissoc int-r interceptor-chain/context-keys)))))
+
+  (testing "1-arg cofx with resolver"
+    (pr/let [static-cofx-key ::inject-validated-cofx-1-arg-resolver-static
+             resolved-cofx-key ::inject-validated-cofx-1-arg-resolver-resolved
+
+             _ (sut/reg-cofx
+                static-cofx-key
+                (fn [app _cofx]
+                  (is (= ::app app))
+                  ::static-val))
+
+             _ (sut/reg-cofx
+                resolved-cofx-key
+                (fn [app _cofx {_a :a
+                                _b :b
+                                :as arg}]
+                  (is (= ::app app))
+                  arg))
+
+             init-coeffects {schema/a-frame-coeffect-event
+                             [::foo {:event-data :val}]}
+
+             init-int-ctx {schema/a-frame-coeffects init-coeffects}
+
+             int-r (interceptor-chain/execute
+                    ::app
+                    ::a-frame
+                    [(sut/inject-validated-cofx
+                      static-cofx-key :keyword static-cofx-key)
+
+                     (sut/inject-validated-cofx
+                      resolved-cofx-key :any resolved-cofx-key
+                      {:a #a-frame.cofx/path [::inject-validated-cofx-1-arg-resolver-static]
+                       :b #a-frame.cofx/event-path [1]})]
+                    init-int-ctx)]
+
+      (is (= (assoc
+              init-int-ctx
+
+              schema/a-frame-coeffects
+              (merge
+               init-coeffects
+               {static-cofx-key ::static-val
+                resolved-cofx-key {:a ::static-val
+                                   :b {:event-data :val}}}))
+
+             (apply dissoc int-r interceptor-chain/context-keys)))))
+  )

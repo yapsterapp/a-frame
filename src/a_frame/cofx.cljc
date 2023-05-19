@@ -105,7 +105,9 @@
 
            has-arg? (contains? interceptor-spec ::arg)
            arg (when has-arg?
-                 (data/resolve-data arg-spec context))]
+                 (data/resolve-data arg-spec context))
+
+           path (if (sequential? path) path [path])]
 
        (if (some? handler)
          (pr/let [coeffect (if has-arg?
