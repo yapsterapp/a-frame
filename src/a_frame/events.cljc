@@ -29,7 +29,7 @@
   [_id interceptors]
   (->> interceptors
        flatten
-       (remove nil?)))
+       (filterv some?)))
 
 (defn register
   "register an interceptor chain for an event - this should terminate
