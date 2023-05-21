@@ -228,10 +228,6 @@
 
       (condp contains? interceptor-fn-key
 
-        ;; we have to resolve the data within the thunk,
-        ;; because doing so may throw errors, which should
-        ;; be recorded and dealt with by the normal
-        ;; interceptor chain mechanism
         #{::enter ::leave}
         (let [thunk (fn [ctx]
                       ;; if the fn returns a vector/seq, then it's
