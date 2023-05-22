@@ -99,6 +99,8 @@ effect.
 ``` clojure
 (require '[a-frame.core :as af])
 (require '[a-frame.std-interceptors :as af.stdintc])
+(require '[a-frame.multimethods :as mm])
+(require '[malli.core :as m])
 
 (af/reg-cofx
   ::load-foo
@@ -110,14 +112,27 @@ effect.
        {id :id url :url}]
      {:id (str url "/" id) :name "foo" :client api-client}))
 
+;; since we can't deref vars on cljs, and we don't want 
+;; any opaque objects in our simple data, we use a multimethod 
+;; to specify the schema validation in inject-validated-cofx
+(defmethod mm/validate ::foo
+  [_ value]
+  (m/validate
+    [:map [:id :string] [:name :string]]
+    value))
+
 (af/reg-event-fx
   ::get-foo
 
+  ;; inject the ::load-foo cofx with an arg pulled from 
+  ;; the event and other cofx, validate the value 
+  ;; conforms to schema ::foo and set at path ::the-foo 
+  ;; in the coeffects
   [(af/inject-validated-cofx
     ::load-foo
     {:id #a-frame.cofx/event-path [::foo-id]
      :url #a-frame.cofx/path [:config :api-url]}
-    [:map [:id :string] [:name :string]]
+    ::foo
     ::the-foo)]
 
   (fn [{foo ::the-foo :as coeffects}

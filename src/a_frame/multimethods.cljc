@@ -13,3 +13,14 @@
   [ev]
   (throw
    (ex-info "unrecognised event type" {:event ev})))
+
+(defmulti validate
+  (fn [schema _value] schema))
+
+(defmethod validate :default
+  [schema value]
+  (throw
+   (ex-info
+    "unknown validate schema"
+    {:schema schema
+     :value value})))

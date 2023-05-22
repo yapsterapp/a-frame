@@ -1,5 +1,6 @@
 (ns a-frame.cofx-test
   (:require
+   [malli.core :as m]
    [promesa.core :as pr]
    [promisespromises.promise :as prpr]
    [promisespromises.test :refer [deftest is testing use-fixtures]]
@@ -7,6 +8,7 @@
    [a-frame.registry :as registry]
    [a-frame.registry.test :as registry.test]
    [a-frame.interceptor-chain :as interceptor-chain]
+   [a-frame.multimethods :as mm]
    [a-frame.cofx :as sut]))
 
 (use-fixtures :each registry.test/reset-registry)
@@ -104,6 +106,26 @@
 
              (apply dissoc int-r interceptor-chain/context-keys))))))
 
+(defmethod mm/validate ::int
+  [_schema value]
+  (m/validate :int value))
+
+(defmethod mm/validate ::string
+  [_schema value]
+  (m/validate :string value))
+
+(defmethod mm/validate ::keyword
+  [_schema value]
+  (m/validate :keyword value))
+
+(defmethod mm/validate ::any
+  [_schema value]
+  (m/validate :any value))
+
+(defmethod mm/validate ::=100
+  [_schema value]
+  (m/validate [:= 100] value))
+
 (deftest inject-validated-cofx-test
   (testing "0-arg cofx"
     (pr/let [cofx-key ::inject-validated-cofx-test-0-arg
@@ -116,7 +138,7 @@
 
              interceptors  [(sut/inject-validated-cofx
                              cofx-key
-                             :int
+                             ::int
                              cofx-key)]
 
              int-r (interceptor-chain/execute
@@ -141,7 +163,7 @@
 
              interceptors  [(sut/inject-validated-cofx
                              cofx-key
-                             :string
+                             ::string
                              cofx-key)]
 
              [k e] (prpr/merge-always
@@ -167,7 +189,7 @@
              int-r (interceptor-chain/execute
                     ::app
                     ::a-frame
-                    [(sut/inject-validated-cofx cofx-key 100 [:= 100] cofx-key)]
+                    [(sut/inject-validated-cofx cofx-key 100 ::=100 cofx-key)]
                     init-int-ctx)]
 
       (is (= (assoc
@@ -203,14 +225,14 @@
                     ::a-frame
                     [(sut/inject-validated-cofx
                       static-cofx-key
-                      :keyword
+                      ::keyword
                       static-cofx-key)
 
                      (sut/inject-validated-cofx
                       resolved-cofx-key
                       {:a #a-frame.cofx/path [::inject-validated-cofx-1-arg-resolver-static]
                        :b #a-frame.cofx/event-path [1]}
-                      :any
+                      ::any
                       resolved-cofx-key)]
                     init-int-ctx)]
 

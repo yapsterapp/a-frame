@@ -1,6 +1,5 @@
 (ns a-frame.cofx
   (:require
-   [malli.core :as m]
    [promesa.core :as pr]
    [promisespromises.error :as err]
    [a-frame.schema :as schema]
@@ -8,6 +7,7 @@
    [a-frame.cofx.data.tag-readers]
    [a-frame.interceptor-chain :as interceptor-chain]
    [a-frame.interceptor-chain.data :as data]
+   [a-frame.multimethods :as mm]
    [taoensso.timbre :refer [info warn]]))
 
 (defn reg-cofx
@@ -114,7 +114,7 @@
                              (handler app coeffects arg)
                              (handler app coeffects))]
 
-           (when-not (m/validate schema coeffect)
+           (when-not (mm/validate schema coeffect)
              (throw (err/ex-info
                      ::invalid-cofx
                      {::id id
