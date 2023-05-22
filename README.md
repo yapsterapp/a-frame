@@ -4,13 +4,17 @@
 [![Clojars Project](https://img.shields.io/clojars/v/com.github.yapsterapp/a-frame.svg)](https://clojars.org/com.github.yapsterapp/a-frame)
 [![cljdoc badge](https://cljdoc.org/badge/com.github.yapsterapp/a-frame)](https://cljdoc.org/d/com.github.yapsterapp/a-frame)
 
-
 TODO - much documentation expansion
 
-A-frame was originally a port of the [re-frame](https://github.com/day8/re-frame)
+A-frame started life as a port of the [re-frame](https://github.com/day8/re-frame)
 event and effect handling machinery to the async domain. It has developed
-to become even more data-driven than re-frame, making logging and debugging
-extremely transparent.
+to become even more data-driven than re-frame, and to give greater control 
+over the processing of events. 
+
+Logging and debugging are extremely transparent and,
+because every stage of event-processing is data-driven, it's easy to split 
+different parts of the process over different execution environments - e.g. 
+different Kafka Streams apps.
 
 ## why?
 
@@ -20,26 +24,26 @@ it is easy to understand, and easy to observe.
 
 ## simple data
 
-The term "simple data" is used below - it means data containing no opaque
+The term "simple" data is used below - it means data containing no opaque
 objects - i.e. no functions or other opaque types. Roughly anything that can
 easily be serialised and deserialised to/from EDN or JSON.
 
 ## how
 
-A-frame uses roughly the same event-processing model as re-frame - `events`
-are handled in a 3 stage process:
+A-frame uses a similar event-processing model to re-frame - `events`
+are usually handled in a 3 stage process:
 
 ``` text
 [gather coeffects] -> [handle event] -> [process effects]
 ```
 
-Like re-frame, this process is implemented with an interceptor chain. Unlike
+As with re-frame, this process is implemented with an interceptor chain, but unlike
 re-frame, the a-frame interceptor chain is:
 * asynchronous - the `:enter` or `:leave` fns in any interceptor may return a
-  promise of their result.
-* data-driven - interceptor chains are themselves described by simple data.
+  promise of their result
+* data-driven - the interceptor chains themselves are described by simple data.
   Since `events`, `coeffects` and `effects` are also simple data, the state of
-  the interceptor chain at any point is fully serialisable.
+  the interceptor chain at any point is fully serialisable
 
 A typical event-handler interceptor chain looks like this:
 
@@ -49,7 +53,7 @@ A typical event-handler interceptor chain looks like this:
 ```
 
 The final interceptor in the chain contains the `event-handler`.
-An `event-handler` is always a pure function with no side effects. Prior
+An `event-handler` is always a pure function with no side-effects. Prior
 interceptors contain `coeffect` or `effect` handlers, which may have
 side-effects and may return a promise of their result.
 
@@ -59,9 +63,9 @@ Events are simple maps describing something that happened. An event
 map must have an `:a-frame/id` key, which describes the type of the
 event and will be used to find a handler for processing the event.
 
-Events can also be simple vectors of `[<id> ...]`, as they generally are
+Events may also be simple vectors of `[<id> ...]`, as they generally are
 in re-frame, but this is less preferred because it makes literal
-paths referencing data in the events less easy to understand.
+paths referencing data in the events harder to understand.
 
 Event handler functions have a signature:
 
@@ -78,9 +82,12 @@ Coeffect handler functions have a signature:
 
 `(fn ([<app> <coeffects>]) ([<app> <coeffects> <data>]))`
 
+The arity providing the `<data>` arg allows data gathered from previous 
+coeffects and the event to be given to the coeffect handler. 
+
 ## effects
 
-Effects are a datastructure describing outputs from the event
+Effects are a simple datastructure describing outputs from the event
 handler. Effects are either a map of `{<effect-key> <effect-data>}`, indicating
 concurrent processing of offects, or a vector of such maps - requiring
 sequential processing. The `<effect-key>` keywords are used to
