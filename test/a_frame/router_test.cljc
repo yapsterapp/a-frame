@@ -31,44 +31,6 @@
             :as _router} (sut/create-router test-app-ctx {})]
     (is (stream/stream? event-s))))
 
-(deftest reg-global-interceptor-test
-  (tlet [{global-interceptors-a schema/a-frame-router-global-interceptors-a
-          :as router} (sut/create-router
-                       test-app-ctx
-                       {schema/a-frame-router-global-interceptors [{:id ::foo}]})]
-        (is (= [{:id ::foo}]
-               @global-interceptors-a))
-        (testing "registering a new global interceptor"
-          (sut/reg-global-interceptor router {:id ::bar})
-          (is (= [{:id ::foo}
-                  {:id ::bar}]
-                 @global-interceptors-a)))
-        (testing "registering a replacement global interceptor"
-          (sut/reg-global-interceptor router {:id ::bar :stuff ::things})
-          (is (= [{:id ::foo}
-                  {:id ::bar :stuff ::things}]
-                 @global-interceptors-a)))))
-
-(deftest clear-global-interceptor-test
-  (testing "clearing all global interceptors"
-    (let [{global-interceptors-a schema/a-frame-router-global-interceptors-a
-           :as router} (sut/create-router
-                        test-app-ctx
-                        {schema/a-frame-router-global-interceptors
-                         [{:id ::foo}]})]
-      (sut/clear-global-interceptors router)
-      (is (= [] @global-interceptors-a))))
-  (testing "clearing a single global interceptor"
-    (let [{global-interceptors-a schema/a-frame-router-global-interceptors-a
-           :as router} (sut/create-router
-                        test-app-ctx
-                        {schema/a-frame-router-global-interceptors
-                         [{:id ::foo} {:id ::bar}]})]
-      (sut/clear-global-interceptors router ::bar)
-      (is (= [{:id ::foo}] @global-interceptors-a)))))
-
-
-
 (deftest dispatch-test
   (tlet [{event-s schema/a-frame-router-event-stream
           :as router} (sut/create-router test-app-ctx {})]

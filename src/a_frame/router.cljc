@@ -26,69 +26,20 @@
 
 (mx/defn create-router :- schema/Router
   [app
-   {global-interceptors schema/a-frame-router-global-interceptors
+   {_global-interceptors schema/a-frame-router-global-interceptors
     #?@(:clj [executor schema/a-frame-router-executor])
     buffer-size schema/a-frame-router-buffer-size
     :or {buffer-size 100}
     :as opts}]
-  (let [opts (dissoc opts schema/a-frame-router-global-interceptors)]
 
-    (merge
-        (->AFrameRouter)
-        opts
-        {schema/a-frame-router-global-interceptors-a
-         (atom (vec global-interceptors))
+  (merge
+   (->AFrameRouter)
+   opts,
+   {schema/a-frame-app-ctx app
 
-         schema/a-frame-app-ctx app
-
-         schema/a-frame-router-event-stream
-         #?(:clj (stream/stream buffer-size nil executor)
-            :cljs (stream/stream buffer-size nil))})))
-
-(defn -replace-global-interceptor
-  [global-interceptors
-   {interceptor-id :id
-    :as interceptor}]
-  (reduce
-   (fn [ret existing-interceptor]
-     (if (= interceptor-id
-            (:id existing-interceptor))
-       (do
-         (debug "a-frame: replacing duplicate global interceptor id: "
-                (:id interceptor))
-         (conj ret interceptor))
-       (conj ret existing-interceptor)))
-   []
-   global-interceptors))
-
-(defn reg-global-interceptor
-  [{global-interceptors-a schema/a-frame-router-global-interceptors-a
-    :as _router}
-   {interceptor-id :id
-    :as interceptor}]
-  (swap!
-   global-interceptors-a
-   (fn [global-interceptors]
-     (let [ids (map :id global-interceptors)]
-       (if (some #{interceptor-id} ids)
-         ;; If the id already exists we replace it in-place to maintain the
-         ;; ordering of global interceptors esp during hot-code reloading
-         ;; in development.
-         (-replace-global-interceptor global-interceptors interceptor)
-         (conj global-interceptors interceptor))))))
-
-(defn clear-global-interceptors
-  ([{global-interceptors-a schema/a-frame-router-global-interceptors-a
-     :as _router}]
-   (reset! global-interceptors-a []))
-
-  ([{global-interceptors-a schema/a-frame-router-global-interceptors-a
-     :as _router}
-    id]
-   (swap!
-    global-interceptors-a
-    (fn [global-interceptors]
-      (into [] (remove #(= id (:id %)) global-interceptors))))))
+    schema/a-frame-router-event-stream
+    #?(:clj (stream/stream buffer-size nil executor)
+       :cljs (stream/stream buffer-size nil))}))
 
 (mx/defn dispatch
   "dispatch an Event or EventOptions"
@@ -132,7 +83,7 @@
 
 (mx/defn handle-event
   [{app schema/a-frame-app-ctx
-    global-interceptors-a schema/a-frame-router-global-interceptors-a
+    global-interceptors schema/a-frame-router-global-interceptors
     :as router} :- schema/Router
    catch? :- :boolean
    event-options :- schema/EventOptions]
@@ -141,7 +92,7 @@
                      schema/a-frame-router router
 
                      schema/a-frame-router-global-interceptors
-                     @global-interceptors-a}]
+                     global-interceptors}]
     (if catch?
       (prpr/catch-always
        (events/handle handle-opts event-options)
