@@ -1,7 +1,6 @@
 (ns a-frame.interceptor-chain.schema
   (:require
    [malli.core :as m]
-   [a-frame.schema :as af.schema]
    [a-frame.interceptor-chain :as-alias intc]))
 
 (def Interceptor
@@ -88,5 +87,6 @@
     ;; any active error
     [::intc/error {:optional true} :any]
 
-    [af.schema/a-frame-app-ctx :any]
-    [af.schema/a-frame-router :any]]))
+    ;; currently need these here so the opaque keys can get removed
+    [:a-frame/router :any]
+    [:a-frame/app-ctx :any]]))

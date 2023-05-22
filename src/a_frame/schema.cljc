@@ -1,7 +1,9 @@
 (ns a-frame.schema
   (:require
+   [malli.core :as m]
    [malli.util :as mu]
-   [promisespromises.stream :as stream]))
+   [promisespromises.stream :as stream]
+   [a-frame.interceptor-chain.schema :as intc.schema]))
 
 (def a-frame-state :a-frame/state)
 (def a-frame-state-handlers-a :a-frame.state/handlers-a)
@@ -10,7 +12,6 @@
 (def a-frame-router-executor :a-frame.router/executor)
 (def a-frame-router-buffer-size :a-frame.router/buffer-size)
 (def a-frame-router-global-interceptors :a-frame.router/global-interceptors)
-(def a-frame-router-global-interceptors-a :a-frame.router/global-interceptors-a)
 
 ;; a system-map
 (def a-frame-app-ctx :a-frame/app-ctx)
@@ -46,52 +47,61 @@
 (def InitialCoeffects
   "these are initial coeffects which can be given to a dispatch
    they don't yet have the Event associated with them"
-  [:map-of :keyword :any])
+  (m/schema
+   [:map-of :keyword :any]))
 
 (def MapEvent
   "an event as dispatched by applications"
-  [:map
-   ;; mandatory id field
-   [a-frame-id :keyword]
+  (m/schema
+   [:map
+    ;; mandatory id field
+    [a-frame-id :keyword]
 
-   ;; open to any other keys as required by an event handler
-   ])
+    ;; open to any other keys as required by an event handler
+    ]))
 
 (def VectorEvent
-  [:cat :keyword [:* :any]])
+  (m/schema
+   [:cat :keyword [:* :any]]))
 
 (def Event
-  [:or MapEvent VectorEvent])
+  (m/schema
+   [:or MapEvent VectorEvent]))
 
 (def EventOptions
   "an event along with some options affecting event processing"
-  [:map
-   {:closed true}
+  (m/schema
+   [:map
+    {:closed true}
 
-   ;; the event
-   [a-frame-event Event]
+    ;; the event
+    [a-frame-event Event]
 
-   ;; options to direct event processing
-   [a-frame-init-coeffects {:optional true} InitialCoeffects]
-   [a-frame-event-transitive-coeffects? {:optional true} :boolean]
-   [a-frame-event-modify-interceptor-chain {:optional true} fn?]])
+    ;; options to direct event processing
+    [a-frame-init-coeffects {:optional true} InitialCoeffects]
+    [a-frame-event-transitive-coeffects? {:optional true} :boolean]
+    [a-frame-event-modify-interceptor-chain {:optional true} fn?]]))
 
 (def EventOrEventOptions
-  [:or Event EventOptions])
+  (m/schema
+   [:or Event EventOptions]))
 
 (def Events
   "a list of events"
-  [:+ Event])
+  (m/schema
+   [:+ Event]))
 
 (def EventOrEventOptionsList
-  [:+ EventOrEventOptions])
+  (m/schema
+   [:+ EventOrEventOptions]))
 
 (def Coeffects
   "the Coeffects that a handler will see"
-  [:map
-   [a-frame-coeffect-event Event]
-   ;; open to other keys
-   ])
+  (m/schema
+   [:map
+    [a-frame-coeffect-event Event]
+    ;; open to other keys
+    ]))
 
 (defn derive-coeffects-schema
   "given some expected coeffects, derive
@@ -122,34 +132,42 @@
    (derive-coeffects-schema false event-schema expected-coeffects-schema)))
 
 (def EffectsMap
-  [:map-of :keyword :any])
+  (m/schema
+   [:map-of :keyword :any]))
 
 (def EffectsVector
-  [:* EffectsMap])
+  (m/schema
+   [:* EffectsMap]))
 
 (def Effects
-  [:or EffectsVector EffectsMap :nil])
+  (m/schema
+   [:or EffectsVector EffectsMap :nil]))
 
 (def AppCtx
-  [:map-of :keyword :any])
+  (m/schema
+   [:map-of :keyword :any]))
 
 (def Interceptor
-  [:map
-   [:id :keyword]
-   [:enter {:optional true} fn?]
-   [:leave {:optional true} fn?]])
+  (m/schema
+   [:map
+    [:id :keyword]
+    [:enter {:optional true} fn?]
+    [:leave {:optional true} fn?]]))
 
 (def Router
-  [:map
-   [a-frame-app-ctx AppCtx]
-   [a-frame-router-event-stream [:fn stream/stream?]]
-   [a-frame-router-global-interceptors-a :any]
-   [a-frame-router-executor {:optional true} :any]
-   [a-frame-router-buffer-size {:optional true} :int]])
+  (m/schema
+   [:map
+    [a-frame-app-ctx AppCtx]
+    [a-frame-router-event-stream [:fn stream/stream?]]
+    [a-frame-router-global-interceptors [:vector intc.schema/InterceptorSpec]]
+    [a-frame-router-executor {:optional true} :any]
+    [a-frame-router-buffer-size {:optional true} :int]]))
 
 (def HandleEventInterceptorCtx
-  [:map
-   [a-frame-router Router]
-   [a-frame-app-ctx AppCtx]
-   [a-frame-effects Effects]
-   [a-frame-coeffects Coeffects]])
+  (mu/merge
+   intc.schema/InterceptorContext
+   [:map
+    [a-frame-router Router]
+    [a-frame-app-ctx AppCtx]
+    [a-frame-effects Effects]
+    [a-frame-coeffects Coeffects]]))
