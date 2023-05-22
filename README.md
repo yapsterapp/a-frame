@@ -173,7 +173,9 @@ interceptor execution history:
 ``` clojure
 (-> @r :a-frame.interceptor-chain/history)
 
-;; => [[:a-frame.std-interceptors/unhandled-error-report
+
+;; => 
+      [[:a-frame.std-interceptors/unhandled-error-report
         :a-frame.interceptor-chain/enter
         :a-frame.interceptor-chain/noop
         :_
@@ -184,8 +186,8 @@ interceptor execution history:
          :a-frame.cofx/schema :user/foo,
          :a-frame.cofx/arg
          {:id
-          #promisespromises.ctx/path [:a-frame/coeffects :a-frame.coeffect/event :user/foo-id],
-          :url #promisespromises.ctx/path [:a-frame/coeffects :config :api-url]}}
+          #a-frame.ctx/path [:a-frame/coeffects :a-frame.coeffect/event :user/foo-id],
+          :url #a-frame.ctx/path [:a-frame/coeffects :config :api-url]}}
         :a-frame.interceptor-chain/enter
         :a-frame.interceptor-chain/execute
         {:id "1000", :url "http://foo.com/api"}
@@ -208,8 +210,8 @@ interceptor execution history:
          :a-frame.cofx/schema :user/foo,
          :a-frame.cofx/arg
          {:id
-          #promisespromises.ctx/path [:a-frame/coeffects :a-frame.coeffect/event :user/foo-id],
-          :url #promisespromises.ctx/path [:a-frame/coeffects :config :api-url]}}
+          #a-frame.ctx/path [:a-frame/coeffects :a-frame.coeffect/event :user/foo-id],
+          :url #a-frame.ctx/path [:a-frame/coeffects :config :api-url]}}
         :a-frame.interceptor-chain/leave
         :a-frame.interceptor-chain/noop
         :_
@@ -230,8 +232,8 @@ note the second entry:
   :a-frame.cofx/schema :user/foo,
   :a-frame.cofx/arg
   {:id
-   #promisespromises.ctx/path [:a-frame/coeffects :a-frame.coeffect/event :user/foo-id],
-   :url #promisespromises.ctx/path [:a-frame/coeffects :config :api-url]}}
+   #a-frame.ctx/path [:a-frame/coeffects :a-frame.coeffect/event :user/foo-id],
+   :url #a-frame.ctx/path [:a-frame/coeffects :config :api-url]}}
  :a-frame.interceptor-chain/enter
  :a-frame.interceptor-chain/execute
  {:id "1000", :url "http://foo.com/api"}
