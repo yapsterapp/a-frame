@@ -9,6 +9,7 @@
    [promisespromises.stream.transport :as stream.transport]
    [a-frame.schema :as schema]
    [a-frame.events :as events]
+   [a-frame.std-interceptors :as std-interceptors]
    [taoensso.timbre :refer [debug info warn error]]))
 
 ;; use a record so we can
@@ -26,7 +27,7 @@
 
 (mx/defn create-router :- schema/Router
   [app
-   {_global-interceptors schema/a-frame-router-global-interceptors
+   {global-interceptors schema/a-frame-router-global-interceptors
     #?@(:clj [executor schema/a-frame-router-executor])
     buffer-size schema/a-frame-router-buffer-size
     :or {buffer-size 100}
@@ -34,8 +35,12 @@
 
   (merge
    (->AFrameRouter)
-   opts,
+   opts
    {schema/a-frame-app-ctx app
+
+    schema/a-frame-router-global-interceptors
+    (or global-interceptors
+        std-interceptors/default-global-interceptors)
 
     schema/a-frame-router-event-stream
     #?(:clj (stream/stream buffer-size nil executor)

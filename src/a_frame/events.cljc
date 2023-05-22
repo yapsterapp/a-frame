@@ -59,9 +59,7 @@
    (register-pure id handler)
    (register
     id
-    [::std-interceptors/unhandled-error-report
-     :a-frame.fx/do-fx
-     interceptors
+    [interceptors
      (std-interceptors/fx-handler->interceptor id)])))
 
 (defn reg-event-ctx
@@ -74,9 +72,7 @@
    (register-pure id handler)
    (register
     id
-    [::std-interceptors/unhandled-error-report
-     :a-frame.fx/do-fx
-     interceptors
+    [interceptors
      (std-interceptors/ctx-handler->interceptor id)])))
 
 (defn clear-event

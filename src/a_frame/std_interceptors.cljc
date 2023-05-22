@@ -219,3 +219,17 @@
   [log-context-data-spec]
   {::interceptor-chain/key ::set-log-context
    ::log-context-data log-context-data-spec})
+
+
+(def unhandled-error-global-interceptors
+  "very minimal set of global interceptors which only handles otherwise
+   unhandled errors - use as global-interceptors when you don't want
+   any fx processed"
+  [::unhandled-error-report])
+
+(def default-global-interceptors
+  "the default set of global-interceptors when no others are specified
+   at router construction -
+   handles unhandled errors and does all fx"
+  [::unhandled-error-report
+   :a-frame.fx/do-fx])

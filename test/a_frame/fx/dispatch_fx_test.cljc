@@ -22,7 +22,9 @@
 (deftest dispatch-fx-test
   (testing "dispatches without transitive coeffects"
     (let [{event-s schema/a-frame-router-event-stream
-           :as router} (router/create-router test-app-ctx {})
+           :as router} (router/create-router
+                        test-app-ctx
+                        {})
           out-a (atom [])
 
           _ (events/reg-event-fx
