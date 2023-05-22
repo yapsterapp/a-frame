@@ -240,7 +240,7 @@ note the second entry:
 
 each log entry has the form:
 
-`[<cofx-spec> <interceptor-op> <interceptor-action> <data-arg> <op-outcome>]`
+`[<interceptor-spec> <interceptor-fn> <action> <data-arg> <outcome>]`
 
 so you can see both the specification of the cofx data arg `:a-frame.cofx/arg` 
 and the resolved `<data-arg>`
