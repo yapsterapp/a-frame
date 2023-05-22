@@ -73,9 +73,17 @@
 
 (defn inject-validated-cofx
   "a cofx with a result with a defined schema to be
-   injected at a given path"
-  ([id schema path]
-   (inject-validated-cofx id nil schema path))
+   injected
+
+   - `id` : the cofx id
+   - `:schema` : the schema of the injected value
+   - `:arg-spec` : specification of the cofx handler arg
+   - `:path` : optional path in the coeffects to inject the value.
+               defaults to `id`"
+  ([id schema]
+   (inject-validated-cofx id nil schema id))
+  ([id arg-spec schema]
+   (inject-validated-cofx id arg-spec schema id))
   ([id arg-spec schema path]
    (cond->
        {::interceptor-chain/key ::inject-validated-cofx

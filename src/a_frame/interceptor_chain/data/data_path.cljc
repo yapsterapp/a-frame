@@ -42,7 +42,7 @@
 #?(:clj
    (defn print-data-path
      [dp ^java.io.Writer w]
-     (.write w "#promisespromises.ctx/path ")
+     (.write w "#a-frame.ctx/path ")
      (print-method (-path dp) w)))
 
 #?(:clj

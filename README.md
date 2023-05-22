@@ -8,12 +8,12 @@ TODO - much documentation expansion
 
 A-frame started life as a port of the [re-frame](https://github.com/day8/re-frame)
 event and effect handling machinery to the async domain. It has developed
-to become even more data-driven than re-frame, and to give greater control 
-over the processing of events. 
+to become even more data-driven than re-frame, and to give greater control
+over the processing of events.
 
 Logging and debugging are extremely transparent and,
-because every stage of event-processing is data-driven, it's easy to split 
-different parts of the process over different execution environments - e.g. 
+because every stage of event-processing is data-driven, it's easy to split
+different parts of the process over different execution environments - e.g.
 different Kafka Streams apps.
 
 ## why?
@@ -82,8 +82,8 @@ Coeffect handler functions have a signature:
 
 `(fn ([<app> <coeffects>]) ([<app> <coeffects> <data>]))`
 
-The arity providing the `<data>` arg allows data gathered from previous 
-coeffects and the event to be given to the coeffect handler. 
+The arity providing the `<data>` arg allows data gathered from previous
+coeffects and the event to be given to the coeffect handler.
 
 ## effects
 
@@ -99,9 +99,9 @@ Effect handler functions have a signature:
 
 ## simple example
 
-This example defines a `::get-foo` event, which uses a `::load-foo` cofx 
+This example defines a `::get-foo` event, which uses a `::load-foo` cofx
 to load the object and then returns the loaded object as an `:api/response`
-effect. 
+effect.
 
 ``` clojure
 (require '[a-frame.core :as af])
@@ -119,8 +119,8 @@ effect.
        {id :id url :url}]
      {:id (str url "/" id) :name "foo" :client api-client}))
 
-;; since we can't deref vars on cljs, and we don't want 
-;; any opaque objects in our simple data, we use a multimethod 
+;; since we can't deref vars on cljs, and we don't want
+;; any opaque objects in our simple data, we use a multimethod
 ;; to specify the schema validation in inject-validated-cofx
 (defmethod mm/validate ::foo
   [_ value]
@@ -131,18 +131,16 @@ effect.
 (af/reg-event-fx
   ::get-foo
 
-  ;; inject the ::load-foo cofx with an arg pulled from 
-  ;; the event and other cofx, validate the value 
-  ;; conforms to schema ::foo and set at path ::the-foo 
-  ;; in the coeffects
+  ;; inject the ::load-foo cofx with an arg pulled from
+  ;; the event and other cofx, validate the value
+  ;; conforms to schema ::foo
   [(af/inject-validated-cofx
     ::load-foo
-    {:id #a-frame.cofx/event-path [::foo-id]
-     :url #a-frame.cofx/path [:config :api-url]}
-    ::foo
-    ::the-foo)]
+    {:id #af/event-path ::foo-id
+     :url #af/cofx-path [:config :api-url]}
+    ::foo)]
 
-  (fn [{foo ::the-foo :as coeffects}
+  (fn [{foo ::load-foo :as coeffects}
        event]
     {:api/response {:foo foo}}))
 
@@ -168,6 +166,92 @@ effect.
 
 ;; => {:foo {:id "http://foo.com/api/1000", :name "foo" :client :user/api}}
 ```
+
+of interest is the interceptor log left behind, which details exactly the 
+interceptor execution history:
+
+``` clojure
+(-> @r :a-frame.interceptor-chain/history)
+
+;; => [[:a-frame.std-interceptors/unhandled-error-report
+        :a-frame.interceptor-chain/enter
+        :a-frame.interceptor-chain/noop
+        :_
+        :a-frame.interceptor-chain/success]
+       [{:a-frame.interceptor-chain/key :a-frame.cofx/inject-validated-cofx,
+         :a-frame.cofx/id :user/load-foo,
+         :a-frame.cofx/path :user/load-foo,
+         :a-frame.cofx/schema :user/foo,
+         :a-frame.cofx/arg
+         {:id
+          #promisespromises.ctx/path [:a-frame/coeffects :a-frame.coeffect/event :user/foo-id],
+          :url #promisespromises.ctx/path [:a-frame/coeffects :config :api-url]}}
+        :a-frame.interceptor-chain/enter
+        :a-frame.interceptor-chain/execute
+        {:id "1000", :url "http://foo.com/api"}
+        :a-frame.interceptor-chain/success]
+       [{:a-frame.interceptor-chain/key :a-frame.std-interceptors/fx-event-handler,
+         :a-frame.std-interceptors/pure-handler-key :user/get-foo}
+        :a-frame.interceptor-chain/enter
+        :a-frame.interceptor-chain/execute
+        :_
+        :a-frame.interceptor-chain/success]
+       [{:a-frame.interceptor-chain/key :a-frame.std-interceptors/fx-event-handler,
+         :a-frame.std-interceptors/pure-handler-key :user/get-foo}
+        :a-frame.interceptor-chain/leave
+        :a-frame.interceptor-chain/noop
+        :_
+        :a-frame.interceptor-chain/success]
+       [{:a-frame.interceptor-chain/key :a-frame.cofx/inject-validated-cofx,
+         :a-frame.cofx/id :user/load-foo,
+         :a-frame.cofx/path :user/load-foo,
+         :a-frame.cofx/schema :user/foo,
+         :a-frame.cofx/arg
+         {:id
+          #promisespromises.ctx/path [:a-frame/coeffects :a-frame.coeffect/event :user/foo-id],
+          :url #promisespromises.ctx/path [:a-frame/coeffects :config :api-url]}}
+        :a-frame.interceptor-chain/leave
+        :a-frame.interceptor-chain/noop
+        :_
+        :a-frame.interceptor-chain/success]
+       [:a-frame.std-interceptors/unhandled-error-report
+        :a-frame.interceptor-chain/leave
+        :a-frame.interceptor-chain/noop
+        :_
+        :a-frame.interceptor-chain/success]]
+```
+
+note the second entry:
+
+``` clojure
+[{:a-frame.interceptor-chain/key :a-frame.cofx/inject-validated-cofx,
+  :a-frame.cofx/id :user/load-foo,
+  :a-frame.cofx/path :user/load-foo,
+  :a-frame.cofx/schema :user/foo,
+  :a-frame.cofx/arg
+  {:id
+   #promisespromises.ctx/path [:a-frame/coeffects :a-frame.coeffect/event :user/foo-id],
+   :url #promisespromises.ctx/path [:a-frame/coeffects :config :api-url]}}
+ :a-frame.interceptor-chain/enter
+ :a-frame.interceptor-chain/execute
+ {:id "1000", :url "http://foo.com/api"}
+ :a-frame.interceptor-chain/success]
+```
+
+each log entry has the form:
+
+`[<cofx-spec> <interceptor-op> <interceptor-action> <data-arg> <op-outcome>]`
+
+so you can see both the specification of the cofx data arg `:a-frame.cofx/arg` 
+and the resolved `<data-arg>`
+
+## error handling
+
+<TODO>
+
+## effects now or later
+
+<TODO>
 
 <!--  TODO -->
 <!--  - dispatch-* coeffects - returning a result to a path in the coeffects -->

@@ -138,8 +138,7 @@
 
              interceptors  [(sut/inject-validated-cofx
                              cofx-key
-                             ::int
-                             cofx-key)]
+                             ::int)]
 
              int-r (interceptor-chain/execute
                     ::app
@@ -163,8 +162,7 @@
 
              interceptors  [(sut/inject-validated-cofx
                              cofx-key
-                             ::string
-                             cofx-key)]
+                             ::string)]
 
              [k e] (prpr/merge-always
                     (interceptor-chain/execute
@@ -189,7 +187,7 @@
              int-r (interceptor-chain/execute
                     ::app
                     ::a-frame
-                    [(sut/inject-validated-cofx cofx-key 100 ::=100 cofx-key)]
+                    [(sut/inject-validated-cofx cofx-key 100 ::=100)]
                     init-int-ctx)]
 
       (is (= (assoc
@@ -225,15 +223,13 @@
                     ::a-frame
                     [(sut/inject-validated-cofx
                       static-cofx-key
-                      ::keyword
-                      static-cofx-key)
+                      ::keyword)
 
                      (sut/inject-validated-cofx
                       resolved-cofx-key
                       {:a #a-frame.cofx/path [::inject-validated-cofx-1-arg-resolver-static]
                        :b #a-frame.cofx/event-path [1]}
-                      ::any
-                      resolved-cofx-key)]
+                      ::any)]
                     init-int-ctx)]
 
       (is (= (assoc
