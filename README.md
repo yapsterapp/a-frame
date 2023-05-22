@@ -173,7 +173,6 @@ interceptor execution history:
 ``` clojure
 (-> @r :a-frame.interceptor-chain/history)
 
-
 ;; => 
       [[:a-frame.std-interceptors/unhandled-error-report
         :a-frame.interceptor-chain/enter
