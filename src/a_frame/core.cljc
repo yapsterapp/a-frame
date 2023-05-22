@@ -39,7 +39,7 @@
   [event init-coeffects]
   (assoc
      (events/coerce-event-options event)
-     schema/a-frame-coeffects init-coeffects))
+     schema/a-frame-init-coeffects init-coeffects))
 
 (defn dispatch
   "dispatch a single event"
@@ -103,20 +103,6 @@
   ([router event]
    (repl-dispatch-sync->coeffects 1 router event)))
 
-(defn reg-global-interceptor
-  "register a global interceptor for the router instance - all events
-   dispatched to this router will have global interceptors prepended to
-   the interceptor chain declared with the handler"
-  ([router interceptor]
-   (router/reg-global-interceptor router interceptor)))
-
-(defn clear-global-interceptors
-  "clear all or one global interceptors"
-  ([router]
-   (router/clear-global-interceptors router))
-  ([router id]
-   (router/clear-global-interceptors router id)))
-
 (defn reg-event-fx
   "register an event-handler expected to return a (promise of a) seq of fx
 
@@ -176,8 +162,14 @@
 (defn inject-cofx
   ([id]
    (cofx/inject-cofx id))
-  ([id value]
-   (cofx/inject-cofx id value)))
+  ([id arg-spec]
+   (cofx/inject-cofx id arg-spec)))
+
+(defn inject-validated-cofx
+  ([id schema path]
+   (cofx/inject-validated-cofx id schema path))
+  ([id arg-spec schema path]
+   (cofx/inject-validated-cofx id arg-spec schema path)))
 
 (defn clear-cofx
   ([]

@@ -93,6 +93,8 @@
    catch? :- :boolean
    event-options :- schema/EventOptions]
 
+  ;; (warn "handle-event" event-options)
+
   (let [handle-opts {schema/a-frame-app-ctx app
                      schema/a-frame-router router
 

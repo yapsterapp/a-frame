@@ -221,7 +221,7 @@
    ::log-context-data log-context-data-spec})
 
 
-(def unhandled-error-global-interceptors
+(def minimal-global-interceptors
   "very minimal set of global interceptors which only handles otherwise
    unhandled errors - use as global-interceptors when you don't want
    any fx processed"
