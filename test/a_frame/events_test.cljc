@@ -79,7 +79,8 @@
                           ::event event}}))]
       (pr/let [[k v] (prpr/merge-always
                       (sut/handle
-                       {schema/a-frame-app-ctx ::app}
+                       {schema/a-frame-app-ctx ::app
+                        schema/a-frame-router-global-interceptors [:a-frame.fx/do-fx]}
                        {schema/a-frame-id ::event-blah :val 100}))
 
                {h-r-app-ctx schema/a-frame-app-ctx
@@ -141,6 +142,7 @@
                 h-r-effects schema/a-frame-effects
                 :as _h-r} (sut/handle
                            {schema/a-frame-app-ctx ::app
+                            schema/a-frame-router-global-interceptors [:a-frame.fx/do-fx]
                             schema/a-frame-router ::a-frame}
 
                            {schema/a-frame-init-coeffects {::cofx-init 550}
@@ -177,7 +179,8 @@
                {::handle-vec-blah 100}))]
       (pr/let [[k v] (prpr/merge-always
                       (sut/handle
-                       {schema/a-frame-app-ctx ::app}
+                       {schema/a-frame-app-ctx ::app
+                        schema/a-frame-router-global-interceptors [:a-frame.fx/do-fx]}
                        [::event-vector 100]))
 
                {h-r-app-ctx schema/a-frame-app-ctx
