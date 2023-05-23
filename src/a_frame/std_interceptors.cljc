@@ -124,31 +124,31 @@
 
 (defn error-context-report
   [err]
-  (let [{{err-ctx-queue ::interceptor-chain/queue
-          err-ctx-stack ::interceptor-chain/stack
-          err-ctx-history ::interceptor-chain/history
-          :as err-ctx} ::interceptor-chain/context
-         fn-key ::interceptor-chain/interceptor-fn-key
+  (let [{{resume-ctx-queue ::interceptor-chain/queue
+          resume-ctx-stack ::interceptor-chain/stack
+          resume-ctx-history ::interceptor-chain/history
+          :as resume-ctx} ::interceptor-chain/resume
          :as _exd} (ex-data err)]
 
     (str "a-frame unhandled error:\n\n"
 
-         "the failure happened in the <fn-key> function of either the head "
-         "(first element) of the queue, OR the top (first element) of the stack"
+         "Here are the interceptor chain queue, stack and history from just "
+         "before the error was thrown."
 
-         "\n\nfn-key: " (pr-str fn-key)
-         "\n\nqueue:\n" (with-out-str
-                          (pprint/pprint err-ctx-queue))
-         "\n\nstack:\n" (with-out-str
-                          (pprint/pprint err-ctx-stack))
+         "\n\nQueue:\n" (with-out-str
+                          (pprint/pprint resume-ctx-queue))
+         "\n\nStack:\n" (with-out-str
+                          (pprint/pprint resume-ctx-stack))
 
-         "\n\nhistory:\n"
+         "\n\nHistory:\n"
          (with-out-str
-           (pprint/pprint err-ctx-history))
+           (pprint/pprint resume-ctx-history))
 
-         "\n\nresume context:\n\n"
+         "\n\nThis resume-context can be used to retry the operation with "
+         "a-frame.interceptor-chain/resume:\n\n"
          (with-out-str
-           (pprint/pprint err-ctx)))))
+           (pprint/pprint resume-ctx))
+         "\n")))
 
 (def unhandled-error-report-interceptor
   "an interceptor which logs a useful report for an error"
@@ -177,13 +177,24 @@
    the interceptor-context and into the
    coeffects - so both the interceptor-context
    and the coeffects can be used as a log-context-src
-   in the a-frame.log logging macros"
-  [interceptor-context log-context]
-  (-> interceptor-context
-      (assoc schema/a-frame-log-ctx log-context)
-      (assoc-in [schema/a-frame-coeffects
-                 schema/a-frame-log-ctx]
-                log-context)))
+   in the a-frame.log logging macros
+
+   if a log-context is already set do not override it"
+  [interceptor-context
+   provided-log-context]
+
+  (let [current-log-ctx (or (get-in interceptor-context
+                                    [schema/a-frame-coeffects
+                                     schema/a-frame-log-ctx])
+                            (get interceptor-context schema/a-frame-log-ctx))
+
+        log-context (or current-log-ctx provided-log-context)]
+
+    (-> interceptor-context
+        (assoc schema/a-frame-log-ctx log-context)
+        (assoc-in [schema/a-frame-coeffects
+                   schema/a-frame-log-ctx]
+                  log-context))))
 
 (def set-log-context-interceptor
   "set a log context - either with data, or if no data

@@ -215,7 +215,7 @@
   [<data> <next-context>] when it completes normally"
   [interceptor-fn-key
    interceptor-spec
-   context
+   _context
    error]
 
   (let [{interceptor-kw ::key
@@ -263,8 +263,7 @@
     [:_ context]))
 
 (defn maybe-execute-interceptor-fn
-  "call an interceptor fn on an interceptor, resolving
-   any supplied data"
+  "call an interceptor fn on an interceptor"
   [interceptor-fn-key
    interceptor-spec
    context
