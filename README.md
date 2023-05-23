@@ -4,12 +4,10 @@
 [![Clojars Project](https://img.shields.io/clojars/v/com.github.yapsterapp/a-frame.svg)](https://clojars.org/com.github.yapsterapp/a-frame)
 [![cljdoc badge](https://cljdoc.org/badge/com.github.yapsterapp/a-frame)](https://cljdoc.org/d/com.github.yapsterapp/a-frame)
 
-TODO - much documentation expansion
-
 A-frame started life as a port of the [re-frame](https://github.com/day8/re-frame)
 event and effect handling machinery to the async domain. It has developed
-to become even more data-driven than re-frame, and to give greater control
-over the processing of events.
+to become even more data-driven, and to give greater control
+over event processing.
 
 Logging and debugging are extremely transparent and,
 because every stage of event-processing is data-driven, it's easy to split
@@ -18,9 +16,10 @@ different Kafka Streams apps.
 
 ## why?
 
-Everyone says you should keep your side-effecting and pure code apart. A-frame
-helps you to do it. it's not as posh as a freer monad based thing, but
-it is easy to understand, and easy to observe.
+Everyone tells you to keep your side-effecting code minimal and and
+away from your pure code. A-frame helps you to do it. It's not as posh as a
+freer monad based thing, but it is extremely data-driven, easy to understand,
+and easy to observe.
 
 ## simple data
 
@@ -37,13 +36,13 @@ are usually handled in a 3 stage process:
 [gather coeffects] -> [handle event] -> [process effects]
 ```
 
-As with re-frame, this process is implemented with an interceptor chain, but unlike
+As in re-frame, this process is implemented with an interceptor chain. Unlike
 re-frame, the a-frame interceptor chain is:
-* asynchronous - the `:enter` or `:leave` fns in any interceptor may return a
-  promise of their result
-* data-driven - the interceptor chains themselves are described by simple data.
-  Since `events`, `coeffects` and `effects` are also simple data, the state of
-  the interceptor chain at any point is fully serialisable
+* asynchronous - the `:enter`, `:leave` and `:error` fns in any interceptor 
+  may return a promise of their result.
+* fully data-driven - the interceptor chains themselves are described by 
+  simple data. Since `events`, `coeffects` and `effects` are also simple data,
+  the entire state of the interceptor chain at any point is fully serialisable.
 
 A typical event-handler interceptor chain looks like this:
 
@@ -59,13 +58,13 @@ side-effects and may return a promise of their result.
 
 ## events
 
-Events are simple maps describing something that happened. An event
+Events are usually simple maps describing something that happened. An event
 map must have an `:a-frame/id` key, which describes the type of the
 event and will be used to find a handler for processing the event.
 
 Events may also be simple vectors of `[<id> ...]`, as they generally are
-in re-frame, but this is less preferred because it makes literal
-paths referencing data in the events harder to understand.
+in re-frame. This form is less preferred because it makes literal
+paths referencing data in the events harder to read.
 
 Event handler functions have a signature:
 
@@ -143,6 +142,8 @@ effect.
 
   (fn [{foo ::load-foo :as coeffects}
        event]
+       ;; uncomment this throw to see error reporting
+       ;; (throw (ex-info "boo" {}))
     {:api/response {:foo foo}}))
 
 (def router (af/create-router
@@ -248,10 +249,10 @@ each log entry has the form:
 so you can see both the specification of the cofx data arg `:a-frame.cofx/arg`
 and the resolved `<data-arg>`
 
-## error handling
+## error handling and resumption
 
 Whenever an error occurs during interceptor-chain processing the
-following things happen
+following things happen:
 * the current operation is halted
 * the causal exception is wrapped in an `ex-info` with a full
   description of the state of the interceptor-chain when the error happened,
@@ -267,32 +268,25 @@ include the `a-frame.std-interceptors/unhandled-error-report` interceptor
 which logs a human-readable report on the error, and re-throws the
 informative `ex-info`.
 
-The `ex-info` includes the full interceptor-context at the time of the error
-in its `ex-data`, so the causal exception along with the
+The `ex-info` includes the full interceptor-context after the error finished
+processing, so the causal exception along with the
 `:a-frame.interceptor-chain/history` key can be inspected for clues as to
-what went wrong.
+what went wrong. The interceptor-context from just before the error
+occured is also included in the `:a-frame.interceptor-chain/resume` key - this
+is called the "resume-context".
 
-It's also possible to try re-executing the problematic operation with, either
-by supplying the `ex-info` directly to the `resume` fn
-
-`(a-frame.interceptor-chain/resume
-   <app-ctx>
-   <a-frame-router>
-   <a-frame-ex-info>)`
-
-or by copying a resume context from the `:a-frame.interceptor-chain/resume` key
-in the `ex-data` and giving that to the `resume` fn
+It is possible to try re-executing the problematic operation either
+by supplying the `ex-info` or the resume-context to the `resume` fn:
 
 `(a-frame.interceptor-chain/resume
    <app-ctx>
    <a-frame-router>
-   <resume-ctx>)`
+   <a-frame-ex-info-or-resume-context>)`
 
-Since the interceptor-chain and context are all simple data, the `resume`
-context can be resumed in a different VM or even machine from that where
-the original failure happened - as long as data references in the resume
-context are available.
-
+Since the resume-context is just simple data, the operation can be resumed
+in a different VM or even machine from that where
+the original failure happened - as long as any data references in the resume
+context are resolvable.
 
 ## effects now or later
 
@@ -306,8 +300,44 @@ can specify the minimal global interceptors
 `a-frame.std-interceptors/minimal-global-interceptors` which will do nothing
 with effects generated by the event handler.
 
-If you want something inbetween - maybe handling some effects immediately, and
+If you want something in-between - maybe handling some effects immediately, and
 leaving some for later, then you could specify a custom interceptor.
+
+## logging
+
+Logging can be difficult with asynchronous operations - stack traces get
+erased and dymamic variables don't work reliably, so when multiple
+operations are proceeding concurrently it can be difficult to narrow a
+log stream to just the lines relating to a single logical operation.
+
+A-frame provides a `set-log-context` interceptor, which adds a log
+context value into the interceptor chain. The logging macros in
+`a-frame.log` can then be used to log with context.
+
+`taoensso.timbre` is currently used for logging, since it's the only common
+clojure/script logging library which supports logging with context.
+
+You can call `a-frame.log.timbre/configure-timbre` to add an output-fn
+to timbre's println appender which will print the context value, leading
+to log entries like this one produced by the
+`a-frame.std-interceptors/unhandled-error-report` interceptor:
+
+``` text
+2023-05-23T11:12:53.852Z ERROR [a-frame.std-interceptors:168] [ForkJoinPool.commonPool-worker-15] [id:c35eb490-f95a-11ed-b7a0-ccb8a4033a35] - a-frame unhandled error:
+```
+
+the context value - in this case `[id:c35eb490-f95a-11ed-b7a0-ccb8a4033a35]` -
+will be present on all log entries for the interceptor chain, no matter that
+individual interceptor functions are executed on different threads.
+
+## further work
+
+- Support for OpenTelemetry tracing and logging would make sense, maybe via
+  [clj-otel](https://github.com/steffan-westcott/clj-otel)
+- the `dispatch-sync` fx can model tail-recursion, but a `dispatch-sync` cofx
+  could be used to model regular recursion, returning a result to the
+  coeffects
+
 
 <!--  TODO -->
 <!--  - dispatch-* coeffects - returning a result to a path in the coeffects -->
