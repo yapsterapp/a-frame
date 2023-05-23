@@ -6,7 +6,7 @@
    [a-frame.registry :as registry]
    [a-frame.interceptor-chain :as interceptor-chain]
    [a-frame.log :as af.log]
-   [taoensso.timbre :refer [info warn error]]))
+   [taoensso.timbre :refer [debug]]))
 
 (defn fx-handler->interceptor
   [pure-handler-key]
@@ -69,7 +69,7 @@
 
    ::interceptor-chain/leave
    (fn [ctx _interceptor-spec]
-     (info "extract-coeffects-interceptor")
+     (debug "extract-coeffects-interceptor")
      (get ctx schema/a-frame-coeffects))})
 
 (interceptor-chain/register-interceptor
@@ -112,7 +112,7 @@
     - inserts a new interceptor at the beginning of the chain which
         extracts coeffects from the context"
   [n interceptors]
-  (info "modify-interceptors-for-coeffects - dropping:" n)
+  ;; (info "modify-interceptors-for-coeffects - dropping:" n)
   (let [interceptors (vec interceptors)
         cnt (count interceptors)
         interceptors (subvec interceptors 0 (max (- cnt n) 0))
@@ -172,6 +172,23 @@
  ::unhandled-error-report
  unhandled-error-report-interceptor)
 
+(def success-report-interceptor
+  {::interceptor-chain/name ::success-report
+
+   ::interceptor-chain/leave
+   (fn [{{ev :a-frame.coeffect/event
+          :as _coeffects} :a-frame/coeffects
+         :as context}
+        _interceptor-spec]
+
+     (af.log/info
+      context
+      (str "OK: " (pr-str ev))))})
+
+(interceptor-chain/register-interceptor
+ ::success-report
+ success-report-interceptor)
+
 (defn assoc-log-context
   "add the log context into the top-level of
    the interceptor-context and into the
@@ -209,7 +226,7 @@
      (let [data (or data
                     {:id #?(:clj (uuid/v1)
                             :cljs (uuid/make-random-uuid))})]
-       (info "set-log-context-interceptor" data)
+       (debug "set-log-context-interceptor" data)
        (assoc-log-context
         context
         data)))})
@@ -231,16 +248,20 @@
   {::interceptor-chain/key ::set-log-context
    ::log-context-data log-context-data-spec})
 
-
 (def minimal-global-interceptors
   "very minimal set of global interceptors which only handles otherwise
    unhandled errors - use as global-interceptors when you don't want
    any fx processed"
-  [::unhandled-error-report])
+  [;; ::set-log-context
+   ::unhandled-error-report
+   ;; ::success-report
+   ])
 
 (def default-global-interceptors
   "the default set of global-interceptors when no others are specified
    at router construction -
    handles unhandled errors and does all fx"
-  [::unhandled-error-report
+  [;; ::set-log-context
+   ::unhandled-error-report
+   ;; ::success-report
    :a-frame.fx/do-fx])
