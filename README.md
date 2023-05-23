@@ -5,7 +5,7 @@
 [![cljdoc badge](https://cljdoc.org/badge/com.github.yapsterapp/a-frame)](https://cljdoc.org/d/com.github.yapsterapp/a-frame)
 
 A-frame started life as a port of the [re-frame](https://github.com/day8/re-frame)
-event and effect handling machinery to the async domain. It has developed
+event and effect handling machinery to the async domain. It has evolved
 to become even more data-driven, and to give greater control
 over event processing.
 
