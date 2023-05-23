@@ -5,21 +5,18 @@
 [![cljdoc badge](https://cljdoc.org/badge/com.github.yapsterapp/a-frame)](https://cljdoc.org/d/com.github.yapsterapp/a-frame)
 
 A-frame started life as a port of the [re-frame](https://github.com/day8/re-frame)
-event and effect handling machinery to the async domain. It has evolved
-to become even more data-driven, and to give greater control
-over event processing.
+event and effect handling machinery to the async domain. 
 
-Logging and debugging are extremely transparent and,
-because every stage of event-processing is data-driven, it's easy to split
-different parts of the process over different execution environments - e.g.
-different Kafka Streams apps.
+It has evolved to become even more data-driven, and to give greater control
+over event processing. It is being used for varied back-end event-processing 
+tasks, including a business game engine and vanilla API handling.
 
 ## why?
 
-Everyone tells you to keep your side-effecting code minimal and and
+They tell you to keep your side-effecting code minimal and
 away from your pure code. A-frame helps you to do it. It's not as posh as a
-freer monad based thing, but it is extremely data-driven, easy to understand,
-and easy to observe.
+freer monad based effects thingy, but it's very data-driven, has an easy to
+understand model, and is easy to observe.
 
 ## simple data
 
@@ -113,9 +110,9 @@ effect.
   ::load-foo
   (fn [;; app context
        {api-client :api :as app}
-       ;; already defined coeffects
+       ;; other coeffects
        _coeffects
-       ;; data arg
+       ;; resolved data arg
        {id :id url :url}]
      {:id (str url "/" id) :name "foo" :client api-client}))
 
@@ -131,7 +128,7 @@ effect.
 (af/reg-event-fx
   ::get-foo
 
-  ;; inject the ::load-foo cofx with an arg pulled from
+  ;; inject the ::load-foo cofx with an arg resolved from
   ;; the event and other cofx, validate the value
   ;; conforms to schema ::foo
   [(af/inject-validated-cofx
@@ -142,7 +139,7 @@ effect.
 
   (fn [{foo ::load-foo :as coeffects}
        event]
-       ;; uncomment this throw to see error reporting
+       ;; uncomment this throw to see error reporting in action
        ;; (throw (ex-info "boo" {}))
     {:api/response {:foo foo}}))
 
@@ -170,7 +167,7 @@ effect.
 ;; => {:foo {:id "http://foo.com/api/1000", :name "foo" :client :user/api}}
 ```
 
-of interest is the interceptor log left behind, which details exactly the
+of interest is the interceptor history log, which details the full
 interceptor execution history:
 
 ``` clojure
