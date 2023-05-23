@@ -7,7 +7,8 @@
    [a-frame.schema :as schema]
    [a-frame.registry.test :as registry.test]
    [a-frame.events :as events]
-   [a-frame.router :as router]))
+   [a-frame.router :as router]
+   [a-frame.util.coeffects-test :refer [assert-cofx]]))
 
 ;; these tests are in their own namespace because they
 ;; exercise a lot more of the machinery than the
@@ -32,9 +33,11 @@
              (fn [cofx {n :n :as event}]
                ;; only the first event should have the ::BAR coeffect
                (if (= 0 n)
-                 (is (= {schema/a-frame-coeffect-event event
-                         ::BAR "bar"} cofx))
-                 (is (= {schema/a-frame-coeffect-event event} cofx)))
+                 (assert-cofx
+                  {schema/a-frame-coeffect-event event
+                   ::BAR "bar"}
+                  cofx)
+                 (assert-cofx {schema/a-frame-coeffect-event event} cofx))
 
                (swap! out-a conj n)
 
@@ -67,8 +70,10 @@
              (fn [cofx {n :n :as event}]
 
                ;; all events should have the ::BAR coeffect
-               (is (= {schema/a-frame-coeffect-event event
-                       ::BAR "bar"} cofx))
+               (assert-cofx
+                {schema/a-frame-coeffect-event event
+                 ::BAR "bar"}
+                cofx)
 
                (swap! out-a conj n)
 
@@ -106,9 +111,10 @@
              (fn [cofx {n :n :as event}]
                ;; only the first event should have the ::BAR coeffect
                (if (= 0 n)
-                 (is (= {schema/a-frame-coeffect-event event
-                         ::BAR "bar"} cofx))
-                 (is (= {schema/a-frame-coeffect-event event} cofx)))
+                 (assert-cofx
+                  {schema/a-frame-coeffect-event event
+                   ::BAR "bar"} cofx)
+                 (assert-cofx {schema/a-frame-coeffect-event event} cofx))
 
                (swap! out-a conj n)
 
@@ -144,8 +150,9 @@
              (fn [cofx {n :n :as event}]
 
                ;; all events should have the ::BAR coeffect
-               (is (= {schema/a-frame-coeffect-event event
-                       ::BAR "bar"} cofx))
+               (assert-cofx
+                {schema/a-frame-coeffect-event event
+                 ::BAR "bar"} cofx)
 
                (swap! out-a conj n)
 
@@ -179,9 +186,11 @@
              (fn [cofx {n :n :as event}]
                ;; only the first event should have the ::BAR coeffect
                (if (= 0 n)
-                 (is (= {schema/a-frame-coeffect-event event
-                         ::BAR "bar"} cofx))
-                 (is (= {schema/a-frame-coeffect-event event} cofx)))
+                 (assert-cofx
+                  {schema/a-frame-coeffect-event event
+                   ::BAR "bar"} cofx)
+                 (assert-cofx
+                  {schema/a-frame-coeffect-event event} cofx))
 
                (swap! out-a conj n)
 
@@ -213,8 +222,9 @@
              (fn [cofx {n :n :as event}]
 
                ;; all events should have the ::BAR coeffect
-               (is (= {schema/a-frame-coeffect-event event
-                       ::BAR "bar"} cofx))
+               (assert-cofx
+                {schema/a-frame-coeffect-event event
+                 ::BAR "bar"} cofx)
 
                (swap! out-a conj n)
 
@@ -250,9 +260,11 @@
              (fn [cofx {n :n :as event}]
                ;; only the first event should have the ::BAR coeffect
                (if (= 0 n)
-                 (is (= {schema/a-frame-coeffect-event event
-                         ::BAR "bar"} cofx))
-                 (is (= {schema/a-frame-coeffect-event event} cofx)))
+                 (assert-cofx
+                  {schema/a-frame-coeffect-event event
+                   ::BAR "bar"}
+                  cofx)
+                 (assert-cofx {schema/a-frame-coeffect-event event} cofx))
 
                (swap! out-a conj n)
 
@@ -287,8 +299,9 @@
              (fn [cofx {n :n :as event}]
 
                ;; all events should have the ::BAR coeffect
-               (is (= {schema/a-frame-coeffect-event event
-                       ::BAR "bar"} cofx))
+               (assert-cofx
+                {schema/a-frame-coeffect-event event
+                 ::BAR "bar"} cofx)
 
                (swap! out-a conj n)
 
