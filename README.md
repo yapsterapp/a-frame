@@ -225,7 +225,11 @@ interceptor execution history:
         :a-frame.interceptor-chain/success]]
 ```
 
-note the second entry:
+each log entry has the form:
+
+`[<interceptor-spec> <interceptor-fn> <action> <data-arg> <outcome>]`
+
+so looking at the second entry, which refers to the `::load-foo` cofx:
 
 ``` clojure
 [{:a-frame.interceptor-chain/key :a-frame.cofx/inject-validated-cofx,
@@ -242,12 +246,8 @@ note the second entry:
  :a-frame.interceptor-chain/success]
 ```
 
-each log entry has the form:
-
-`[<interceptor-spec> <interceptor-fn> <action> <data-arg> <outcome>]`
-
-so you can see both the specification of the cofx data arg `:a-frame.cofx/arg`
-and the resolved `<data-arg>`
+both the specification of the cofx data arg `:a-frame.cofx/arg`
+and the resolved `<data-arg>` can be seen.
 
 ## error handling and resumption
 
