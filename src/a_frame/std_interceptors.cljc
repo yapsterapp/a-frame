@@ -183,7 +183,9 @@
 
      (af.log/info
       context
-      (str "OK: " (pr-str ev))))})
+      (str "OK: " (pr-str ev)))
+
+     context)})
 
 (interceptor-chain/register-interceptor
  ::success-report
@@ -252,16 +254,15 @@
   "very minimal set of global interceptors which only handles otherwise
    unhandled errors - use as global-interceptors when you don't want
    any fx processed"
-  [;; ::set-log-context
+  [::set-log-context
    ::unhandled-error-report
-   ;; ::success-report
-   ])
+   ::success-report])
 
 (def default-global-interceptors
   "the default set of global-interceptors when no others are specified
    at router construction -
    handles unhandled errors and does all fx"
-  [;; ::set-log-context
+  [::set-log-context
    ::unhandled-error-report
-   ;; ::success-report
+   ::success-report
    :a-frame.fx/do-fx])
