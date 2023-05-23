@@ -15,6 +15,7 @@
    [a-frame.std-interceptors :as std-interceptors]
    [a-frame.events :as events]
    [a-frame.fx :as fx]
+   [a-frame.util.coeffects-test :refer [assert-cofx]]
    [a-frame.router :as sut]
    [taoensso.timbre :refer [error]]))
 
@@ -89,7 +90,7 @@
           _ (events/reg-event-fx
              ::handle-event-test-success
              (fn [cofx event]
-               (is (= {schema/a-frame-coeffect-event event} cofx))
+               (assert-cofx {schema/a-frame-coeffect-event event} cofx)
                (is (= {schema/a-frame-id ::handle-event-test-success}
                       event))
                {::bar 100}))
@@ -216,8 +217,10 @@
              ::handle-event-test-extended-event-with-coeffects
              (fn [cofx event]
                (is (= org-event event))
-               (is (= {schema/a-frame-coeffect-event event
-                       ::foo 1000} cofx))
+               (assert-cofx
+                {schema/a-frame-coeffect-event event
+                 ::foo 1000}
+                cofx)
                (is (= {schema/a-frame-id
                        ::handle-event-test-extended-event-with-coeffects}
                       event))
@@ -239,7 +242,7 @@
             _ (events/reg-event-fx
                ::foo
                (fn [cofx event]
-                 (is (= {schema/a-frame-coeffect-event event} cofx))
+                 (assert-cofx {schema/a-frame-coeffect-event event} cofx)
                  (is (= {schema/a-frame-id ::foo} event))
 
                  (throw (err/ex-info ::boo {::blah 55}))))
@@ -270,7 +273,7 @@
             _ (events/reg-event-fx
                ::foo
                (fn [cofx event]
-                 (is (= {schema/a-frame-coeffect-event event} cofx))
+                 (assert-cofx {schema/a-frame-coeffect-event event} cofx)
                  (is (= {schema/a-frame-id ::foo} event))
 
                  (throw (err/ex-info ::boo {::blah 55}))))
@@ -303,7 +306,7 @@
           _ (events/reg-event-fx
              ::foo
              (fn [cofx event]
-               (is (= {schema/a-frame-coeffect-event event} cofx))
+               (assert-cofx {schema/a-frame-coeffect-event event} cofx)
 
                (stream/put! out-s event)
                ;; event handler must return sync result
@@ -312,7 +315,7 @@
           _ (events/reg-event-fx
              ::bar
              (fn [cofx event]
-               (is (= {schema/a-frame-coeffect-event event} cofx))
+               (assert-cofx {schema/a-frame-coeffect-event event} cofx)
 
                (stream/put! out-s event)
                ;; event handler must return sync result
@@ -350,7 +353,7 @@
             _ (events/reg-event-fx
                ::foo
                (fn [cofx {n :n :as event}]
-                 (is (= {schema/a-frame-coeffect-event event} cofx))
+                 (assert-cofx {schema/a-frame-coeffect-event event} cofx)
 
                  (if (odd? n)
                    (throw (err/ex-info ::boo {::boo ::hoo}))
@@ -381,7 +384,7 @@
           _ (events/reg-event-fx
              ::handle-sync-event-stream-test-no-dispatch
              (fn [cofx {n :n :as event}]
-               (is (= {schema/a-frame-coeffect-event event} cofx))
+               (assert-cofx {schema/a-frame-coeffect-event event} cofx)
 
                (swap! out-a conj n)
 
@@ -406,7 +409,7 @@
           _ (events/reg-event-fx
              ::handle-sync-event-stream-test-with-dispatch
              (fn [cofx {n :n :as event}]
-               (is (= {schema/a-frame-coeffect-event event} cofx))
+               (assert-cofx {schema/a-frame-coeffect-event event} cofx)
 
                (swap! out-a conj n)
 
@@ -436,7 +439,7 @@
           _ (events/reg-event-fx
              ::dispatch-sync-test-no-dispatch
              (fn [cofx {n :n :as event}]
-               (is (= {schema/a-frame-coeffect-event event} cofx))
+               (assert-cofx {schema/a-frame-coeffect-event event} cofx)
 
                (swap! out-a conj n)
 
@@ -456,10 +459,11 @@
         (is (not (stream.impl/closed? event-s)))
 
         (is (= {} r-effects))
-        (is (= {:a-frame.coeffect/event
-                {schema/a-frame-id ::dispatch-sync-test-no-dispatch
-                 :n 0}}
-               r-coeffects)))))
+        (assert-cofx
+         {:a-frame.coeffect/event
+          {schema/a-frame-id ::dispatch-sync-test-no-dispatch
+           :n 0}}
+         r-coeffects))))
 
   (testing "with a dispatch fx"
     (let [{event-s schema/a-frame-router-event-stream
@@ -469,7 +473,7 @@
           _ (events/reg-event-fx
              ::dispatch-sync-test-with-dispatch
              (fn [cofx {n :n :as event}]
-               (is (= {schema/a-frame-coeffect-event event} cofx))
+               (assert-cofx {schema/a-frame-coeffect-event event} cofx)
 
                (swap! out-a conj n)
 
@@ -493,9 +497,10 @@
         (is (= {:a-frame/dispatch {schema/a-frame-id ::dispatch-sync-test-with-dispatch
                                    :n 2}}
                r-effects))
-        (is (= {:a-frame.coeffect/event {schema/a-frame-id ::dispatch-sync-test-with-dispatch
-                                         :n 0}}
-               r-coeffects)))))
+        (assert-cofx
+         {:a-frame.coeffect/event {schema/a-frame-id ::dispatch-sync-test-with-dispatch
+                                   :n 0}}
+         r-coeffects))))
 
   (testing "with a dispatch-sync fx"
     (let [{event-s schema/a-frame-router-event-stream
@@ -505,7 +510,7 @@
           _ (events/reg-event-fx
              ::dispatch-sync-test-with-dispatch-sync-cofx
              (fn [cofx {n :n :as event}]
-               (is (= {schema/a-frame-coeffect-event event} cofx))
+               (assert-cofx {schema/a-frame-coeffect-event event} cofx)
 
                (swap! out-a conj n)
 
@@ -530,10 +535,11 @@
                 {schema/a-frame-id ::dispatch-sync-test-with-dispatch-sync-cofx
                  :n 2}}
                r-effects))
-        (is (= {:a-frame.coeffect/event
-                {schema/a-frame-id ::dispatch-sync-test-with-dispatch-sync-cofx
-                 :n 0}}
-               r-coeffects)))))
+        (assert-cofx
+         {:a-frame.coeffect/event
+          {schema/a-frame-id ::dispatch-sync-test-with-dispatch-sync-cofx
+           :n 0}}
+         r-coeffects))))
 
   ;; TODO this test is passing, but is crashing the js vm - probably
   ;; because it generates an uncontrolled errored promise somewhere
@@ -546,7 +552,7 @@
             _ (events/reg-event-fx
                ::dispatch-sync-test-propagates-error
                (fn [cofx {n :n :as event}]
-                 (is (= {schema/a-frame-coeffect-event event} cofx))
+                 (assert-cofx {schema/a-frame-coeffect-event event} cofx)
 
                  (swap! out-a conj n)
 
@@ -600,7 +606,7 @@
             _ (events/reg-event-fx
                ::dispatch-sync-propagates-error-from-nested-dispatch
                (fn [cofx {n :n :as event}]
-                 (is (= {schema/a-frame-coeffect-event event} cofx))
+                 (assert-cofx {schema/a-frame-coeffect-event event} cofx)
 
                  (swap! out-a conj n)
 
@@ -654,7 +660,7 @@
           _ (events/reg-event-fx
              ::handle-n-sync-event-stream-test-no-dispatch
              (fn [cofx {n :n :as event}]
-               (is (= {schema/a-frame-coeffect-event event} cofx))
+               (assert-cofx {schema/a-frame-coeffect-event event} cofx)
 
                (swap! out-a conj n)
 
@@ -678,7 +684,7 @@
           _ (events/reg-event-fx
              ::handle-n-sync-event-stream-test-with-dispatch
              (fn [cofx {n :n :as event}]
-               (is (= {schema/a-frame-coeffect-event event} cofx))
+               (assert-cofx {schema/a-frame-coeffect-event event} cofx)
 
                (swap! out-a conj n)
 
@@ -709,7 +715,7 @@
           _ (events/reg-event-fx
              ::handle-n-sync-event-stream-test-with-dispatch-sync-and-coeffects
              (fn [cofx {n :n :as event}]
-               (is (= {schema/a-frame-coeffect-event event} cofx))
+               (assert-cofx {schema/a-frame-coeffect-event event} cofx)
 
                (swap! out-a conj n)
 
@@ -745,7 +751,7 @@
              ::foo
              (fn [cofx {n :n :as event}]
                ;; (prn "entering" event-v)
-               (is (= {schema/a-frame-coeffect-event event} cofx))
+               (assert-cofx {schema/a-frame-coeffect-event event} cofx)
 
                (if (<= n 100)
                  (pr/let [p (stream/put! out-s n)
