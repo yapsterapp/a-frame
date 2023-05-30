@@ -19,7 +19,7 @@
 
        ;; if we eval the path then we can use var symbols
        ;; in the path. this will only work on clj
-       (cofx-path (eval path)))))
+       ((resolve 'a-frame.cofx.data.paths/cofx-path) (eval path)))))
 
 #?(:clj
    (defn read-event-path
@@ -28,7 +28,7 @@
      (if-cljs
          `(event-path ~path)
 
-       (event-path (eval path)))))
+       ((resolve 'a-frame.cofx.data.paths/event-path) (eval path)))))
 
 #?(:cljs
    (defn ^:export read-cofx-path

@@ -19,7 +19,7 @@
 
        ;; if we eval the path then we can use var symbols
        ;; in the path. this will only work on clj
-       (data-path (eval path)))))
+       ((resolve 'a-frame.interceptor-chain.data/data-path) (eval path)))))
 
 #?(:cljs
    (defn ^:export read-ctx-path
