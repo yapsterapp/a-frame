@@ -28,7 +28,6 @@
 
   :shadow-node-repl
   {:extra-deps {nrepl/nrepl {:mvn/version "1.1.0-alpha1"}
-                cider/piggieback {:mvn/version "0.5.3"}
                 refactor-nrepl/refactor-nrepl {:mvn/version "3.6.0"}
                 cider/cider-nrepl {:mvn/version "0.29.0"}}}
 
